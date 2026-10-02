@@ -1,19 +1,11 @@
-"use client";
-
-import { useQuery } from "@tanstack/react-query";
-import { getFilterOptions } from "@/lib/api/filterOptions";
+import Navbar from "@/components/layout/Navbar";
 
 export default function Page() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: getFilterOptions,
-  });
-
-  console.log(data);
-
-  if (isLoading) return <p>Loading...</p>;
-
-  if (error) return <p>Error</p>;
-
-  return <div>API connected</div>;
+  return (
+    <main className="min-h-screen">
+      <div className="mx-auto w-full max-w-[1920px]">
+        <Navbar />
+      </div>
+    </main>
+  );
 }
