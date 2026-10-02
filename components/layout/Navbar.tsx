@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import HeaderSearch from "@/features/search/components/HeaderSearch";
 import AuthButtons from "@/features/auth/components/AuthButtons";
+import UserMenu from "@/features/auth/components/UserMenu";
 
 const Navbar = () => {
   return (
@@ -25,7 +26,8 @@ const Navbar = () => {
       </div>
 
       <HeaderSearch />
-      <AuthButtons />
+      {/* <AuthButtons /> */}
+      <UserMenu />
     </nav>
   );
 };
