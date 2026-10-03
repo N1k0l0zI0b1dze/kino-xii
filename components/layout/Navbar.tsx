@@ -6,7 +6,7 @@ import UserMenu from "@/features/auth/components/UserMenu";
 import { mockUser } from "@/features/auth/data/mockUser";
 
 const Navbar = () => {
-  const isAuthenticated = true;
+  const isAuthenticated = false;
 
   return (
     <nav className="flex h-27.75 border-b items-center gap-4 px-15">
