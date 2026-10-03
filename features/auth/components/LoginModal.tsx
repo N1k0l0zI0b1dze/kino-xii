@@ -6,9 +6,10 @@ import { loginSchema, type LoginFormValues } from "../schemas/loginSchema";
 
 type LoginModalProps = {
   onClose: () => void;
+  onSignup: () => void;
 };
 
-const LoginModal = ({ onClose }: LoginModalProps) => {
+const LoginModal = ({ onClose, onSignup }: LoginModalProps) => {
   const {
     register,
     handleSubmit,
@@ -165,6 +166,7 @@ const LoginModal = ({ onClose }: LoginModalProps) => {
             Don&apos;t have an account?{" "}
             <button
               type="button"
+              onClick={onSignup}
               className="cursor-pointer font-medium text-[#EC3013]"
             >
               Sign up
