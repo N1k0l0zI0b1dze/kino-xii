@@ -1,3 +1,10 @@
+export type PreferredVenue = {
+  id: number;
+  slug: string;
+  name: string;
+  city: string;
+};
+
 export type User = {
   id: number;
   username: string;
@@ -7,7 +14,7 @@ export type User = {
   mobileNumber: string | null;
   dateOfBirth: string | null;
   age: number | null;
-  preferredVenue: string | null;
+  preferredVenue: PreferredVenue | null;
   profileComplete: boolean;
 };
 

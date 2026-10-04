@@ -28,13 +28,13 @@ const UserMenu = ({ user }: UserMenuProps) => {
   const firstName = displayName.split(" ")[0];
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       <button
         type="button"
         onClick={handleDropdown}
-        className="flex h-10 w-30.25 cursor-pointer items-center"
+        className="flex h-10 w-fit shrink-0 cursor-pointer items-center"
       >
-        <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#1E2031]">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1E2031]">
           {user.avatar ? (
             <Image
               src={user.avatar}
@@ -56,7 +56,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
           />
         </div>
 
-        <span className="ml-3 text-[14px] font-medium text-white">
+        <span className="ml-3 whitespace-nowrap text-[14px] font-medium text-white">
           {firstName}
         </span>
 
@@ -65,7 +65,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
           alt=""
           width={16}
           height={16}
-          className={`ml-auto transition-transform duration-200 ${
+          className={`ml-2 shrink-0 transition-transform duration-200 ${
             dropdown ? "rotate-180" : "rotate-0"
           }`}
         />
