@@ -4,6 +4,7 @@ import "./globals.css";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { Archivo } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <QueryProvider>
           <Navbar />
           {children}
+          <Footer />
         </QueryProvider>
       </body>
     </html>
