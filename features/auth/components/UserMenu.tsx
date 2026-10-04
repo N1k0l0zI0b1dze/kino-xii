@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import UserDropdown from "./UserDropdown";
 import type { User } from "../types";
 
@@ -11,6 +11,21 @@ type UserMenuProps = {
 
 const UserMenu = ({ user }: UserMenuProps) => {
   const [dropdown, setDropdown] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleDropdown = () => {
     setDropdown((prev) => !prev);
@@ -28,7 +43,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
   const firstName = displayName.split(" ")[0];
 
   return (
-    <div className="relative shrink-0">
+    <div ref={menuRef} className="relative shrink-0">
       <button
         type="button"
         onClick={handleDropdown}
@@ -73,7 +88,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
 
       {dropdown && (
         <div className="absolute top-full right-0 mt-2">
-          <UserDropdown user={user} />
+          <UserDropdown user={user} onClose={() => setDropdown(false)} />
         </div>
       )}
     </div>

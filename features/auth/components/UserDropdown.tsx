@@ -8,9 +8,10 @@ import { logoutUser } from "../api/logout";
 
 type UserDropdownProps = {
   user: User;
+  onClose: () => void;
 };
 
-const UserDropdown = ({ user }: UserDropdownProps) => {
+const UserDropdown = ({ user, onClose }: UserDropdownProps) => {
   const displayName = user.fullName ?? user.username;
 
   const initials = displayName
@@ -100,6 +101,7 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
       <div className="mt-2 w-full py-1">
         <Link
           href="/profile"
+          onClick={onClose}
           className="flex h-10 w-full items-center gap-2 px-5 transition-colors hover:bg-white/10"
         >
           <Image
@@ -114,6 +116,7 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
 
         <Link
           href="/profile?tab=tickets"
+          onClick={onClose}
           className="flex h-10 w-full items-center gap-2 px-5 transition-colors hover:bg-white/10"
         >
           <Image
