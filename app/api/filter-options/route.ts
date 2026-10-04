@@ -1,4 +1,4 @@
-import { API_URL } from "../client";
+import { API_URL } from "../../../lib/api/client";
 
 export async function GET() {
   const response = await fetch(`${API_URL}/filter-options`);

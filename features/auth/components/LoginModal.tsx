@@ -3,6 +3,8 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormValues } from "../schemas/loginSchema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { loginUser } from "../api/login";
 
 type LoginModalProps = {
   onClose: () => void;
@@ -13,17 +15,41 @@ const LoginModal = ({ onClose, onSignup }: LoginModalProps) => {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors, touchedFields, isValid },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
   });
 
+  const queryClient = useQueryClient();
+
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["current-user"],
+      });
+
+      onClose();
+    },
+
+    onError: (error) => {
+      setError("root.server", {
+        type: "server",
+        message: error.message,
+      });
+    },
+  });
+
   const emailIsValid = touchedFields.email && !errors.email;
   const passwordIsValid = touchedFields.password && !errors.password;
 
   const onSubmit = (data: LoginFormValues) => {
-    console.log(data);
+    clearErrors("root.server");
+    loginMutation.mutate(data);
   };
 
   return (
@@ -148,18 +174,24 @@ const LoginModal = ({ onClose, onSignup }: LoginModalProps) => {
                 {errors.password.message}
               </p>
             )}
+
+            {errors.root?.server && (
+              <p className="mt-2 text-[12px] text-[#EC3013]">
+                {errors.root.server.message}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={!isValid}
+            disabled={!isValid || loginMutation.isPending}
             className={`mt-10 h-10.25 w-full rounded-full text-[14px] font-semibold transition-colors ${
-              isValid
+              isValid && !loginMutation.isPending
                 ? "cursor-pointer bg-[#EC3013] text-white"
                 : "cursor-not-allowed bg-[#505261] text-[#A9A9A9]"
             }`}
           >
-            Log in
+            {loginMutation.isPending ? "Logging in..." : "Log in"}
           </button>
 
           <p className="mt-4 text-center text-[14px] text-[#A9A9A9]">

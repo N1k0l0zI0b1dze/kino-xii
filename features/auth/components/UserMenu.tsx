@@ -16,14 +16,16 @@ const UserMenu = ({ user }: UserMenuProps) => {
     setDropdown((prev) => !prev);
   };
 
-  const initials = user.name
+  const displayName = user.fullName ?? user.username;
+
+  const initials = displayName
     .split(" ")
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
 
-  const firstName = user.name.split(" ")[0];
+  const firstName = displayName.split(" ")[0];
 
   return (
     <div className="relative">
@@ -33,10 +35,10 @@ const UserMenu = ({ user }: UserMenuProps) => {
         className="flex h-10 w-30.25 cursor-pointer items-center"
       >
         <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#1E2031]">
-          {user.avatarUrl ? (
+          {user.avatar ? (
             <Image
-              src={user.avatarUrl}
-              alt={user.name}
+              src={user.avatar}
+              alt={displayName}
               width={40}
               height={40}
               className="h-10 w-10 rounded-lg object-cover"

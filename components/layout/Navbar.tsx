@@ -1,12 +1,21 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import HeaderSearch from "@/features/search/components/HeaderSearch";
 import AuthButtons from "@/features/auth/components/AuthButtons";
 import UserMenu from "@/features/auth/components/UserMenu";
-import { mockUser } from "@/features/auth/data/mockUser";
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 
 const Navbar = () => {
-  const isAuthenticated = false;
+  const { data, isLoading } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: getCurrentUser,
+    retry: false,
+  });
+
+  const user = data?.data;
 
   return (
     <nav className="flex h-27.75 border-b items-center gap-4 px-15">
@@ -30,7 +39,13 @@ const Navbar = () => {
 
       <HeaderSearch />
 
-      {isAuthenticated ? <UserMenu user={mockUser} /> : <AuthButtons />}
+      {isLoading ? (
+        <div className="h-10 w-48" />
+      ) : user ? (
+        <UserMenu user={user} />
+      ) : (
+        <AuthButtons />
+      )}
     </nav>
   );
 };

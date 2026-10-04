@@ -7,7 +7,9 @@ type UserDropdownProps = {
 };
 
 const UserDropdown = ({ user }: UserDropdownProps) => {
-  const initials = user.name
+  const displayName = user.fullName ?? user.username;
+
+  const initials = displayName
     .split(" ")
     .map((part) => part[0])
     .join("")
@@ -18,10 +20,10 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
     <div className="flex h-auto w-75.5 flex-col overflow-hidden rounded-2xl bg-[#070C1C]">
       <div className="flex h-15.5 w-full flex-row items-end gap-2.5 px-5">
         <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#1E2031]">
-          {user.avatarUrl ? (
+          {user.avatar ? (
             <Image
-              src={user.avatarUrl}
-              alt={user.name}
+              src={user.avatar}
+              alt={displayName}
               width={40}
               height={40}
               className="h-10 w-10 rounded-lg object-cover"
@@ -41,7 +43,7 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
 
         <div className="flex flex-col">
           <p className="text-[14px] leading-none font-normal text-white">
-            {user.name}
+            {displayName}
           </p>
 
           <p className="text-[12px] font-normal text-[#A9A9A9]">{user.email}</p>

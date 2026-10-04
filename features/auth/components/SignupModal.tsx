@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupFormValues } from "../schemas/signupSchema";
+import { useMutation } from "@tanstack/react-query";
+import { registerUser } from "../api/register";
 
 type SignupModalProps = {
   onClose: () => void;
@@ -26,6 +28,16 @@ const SignupModal = ({ onClose, onLogin }: SignupModalProps) => {
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     mode: "onBlur",
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (data) => {
+      console.log("REGISTER SUCCESS:", data);
+    },
+    onError: (error) => {
+      console.log("REGISTER ERROR:", error);
+    },
   });
 
   const usernameIsValid = touchedFields.username && !errors.username;
@@ -73,7 +85,7 @@ const SignupModal = ({ onClose, onLogin }: SignupModalProps) => {
   };
 
   const onSubmit = (data: SignupFormValues) => {
-    console.log({
+    registerMutation.mutate({
       ...data,
       avatar: avatarFile,
     });
