@@ -7,6 +7,7 @@ import AuthButtons from "@/features/auth/components/AuthButtons";
 import UserMenu from "@/features/auth/components/UserMenu";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
   const { data, isLoading } = useQuery({
@@ -16,37 +17,47 @@ const Navbar = () => {
   });
 
   const user = data?.data;
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
 
   return (
-    <nav className="flex h-27.75 border-b items-center gap-4 px-15">
-      <div className="flex shrink-0 items-center gap-9">
-        <Link href="/" aria-label="Go to homepage">
-          <Image
-            src="/assets/images/logo.svg"
-            alt="Kino XII Logo"
-            width={88}
-            height={22}
-          />
-        </Link>
+    <header
+      className={
+        isHomePage
+          ? "absolute top-0 left-0 z-50 w-full bg-transparent"
+          : "relative z-50 w-full bg-[#070C1C]"
+      }
+    >
+      <nav className="flex h-27.75 items-center gap-4 border-b px-15">
+        <div className="flex shrink-0 items-center gap-9">
+          <Link href="/" aria-label="Go to homepage">
+            <Image
+              src="/assets/images/logo.svg"
+              alt="Kino XII Logo"
+              width={88}
+              height={22}
+            />
+          </Link>
 
-        <Link
-          href="#"
-          className="text-[12px] font-normal tracking-[0.06em] text-[#FFFFFF]"
-        >
-          SESSIONS
-        </Link>
-      </div>
+          <Link
+            href="/sessions"
+            className="text-[12px] font-normal tracking-[0.06em] text-white"
+          >
+            SESSIONS
+          </Link>
+        </div>
 
-      <HeaderSearch />
+        <HeaderSearch />
 
-      {isLoading ? (
-        <div className="h-10 w-48" />
-      ) : user ? (
-        <UserMenu user={user} />
-      ) : (
-        <AuthButtons />
-      )}
-    </nav>
+        {isLoading ? (
+          <div className="h-10 w-48" />
+        ) : user ? (
+          <UserMenu user={user} />
+        ) : (
+          <AuthButtons />
+        )}
+      </nav>
+    </header>
   );
 };
 
