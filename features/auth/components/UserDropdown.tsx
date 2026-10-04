@@ -1,6 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type { User } from "../types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logoutUser } from "../api/logout";
 
 type UserDropdownProps = {
   user: User;
@@ -15,6 +19,24 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: logoutUser,
+
+    onSuccess: async () => {
+      queryClient.setQueryData(["current-user"], null);
+
+      await queryClient.invalidateQueries({
+        queryKey: ["current-user"],
+      });
+    },
+
+    onError: (error) => {
+      console.log("LOGOUT ERROR:", error);
+    },
+  });
 
   return (
     <div className="flex h-auto w-75.5 flex-col overflow-hidden rounded-2xl bg-[#070C1C]">
@@ -107,7 +129,9 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
 
       <button
         type="button"
-        className="mt-1 mb-2.5 flex h-9 w-full items-center gap-2 px-5 transition-colors hover:bg-white/10"
+        onClick={() => logoutMutation.mutate()}
+        disabled={logoutMutation.isPending}
+        className="mt-1 mb-2.5 flex h-9 w-full items-center gap-2 px-5 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Image
           src="/assets/images/user-profile/logout.svg"
@@ -116,7 +140,9 @@ const UserDropdown = ({ user }: UserDropdownProps) => {
           height={16}
         />
 
-        <span className="text-[14px] text-[#EC3013]">Log out</span>
+        <span className="text-[14px] text-[#EC3013]">
+          {logoutMutation.isPending ? "Logging out..." : "Log out"}
+        </span>
       </button>
     </div>
   );
