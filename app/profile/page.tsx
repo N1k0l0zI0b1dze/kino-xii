@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import { useRouter, useSearchParams } from "next/navigation";
 import PersonalInformation from "@/features/profile/components/PersonalInformation";
 import MyTickets from "@/features/profile/components/MyTickets";
+import { getTickets } from "@/features/profile/api/getTickets";
 
 const ProfilePage = () => {
   const { data, isLoading } = useQuery({
@@ -14,6 +15,15 @@ const ProfilePage = () => {
   });
 
   const user = data?.data;
+
+  const { data: ticketsData } = useQuery({
+    queryKey: ["tickets"],
+    queryFn: getTickets,
+    enabled: !!user,
+    retry: false,
+  });
+
+  const ticketCount = ticketsData?.data.length ?? 0;
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -59,7 +69,7 @@ const ProfilePage = () => {
           >
             My Tickets
             <span className="ml-2 inline-flex h-4.25 w-4.75 items-center justify-center rounded-full bg-[#EC3013] text-[12px]">
-              2
+              {ticketCount}
             </span>
           </button>
         </div>

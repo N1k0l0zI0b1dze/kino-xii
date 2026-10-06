@@ -1,10 +1,12 @@
 import Image from "next/image";
-import { Ticket } from "../types";
+import type { Ticket } from "../types";
 
 type TicketCardProps = {
   ticket: Ticket;
+  onRefund: (orderReference: string) => void;
+  isRefunding: boolean;
 };
-const TicketCard = ({ ticket }: TicketCardProps) => {
+const TicketCard = ({ ticket, onRefund, isRefunding }: TicketCardProps) => {
   return (
     <div className="flex h-45.75 w-full items-center rounded-[26px] bg-[#1E2031] pl-7.5 gap-4.5 cursor-default">
       <Image
@@ -53,17 +55,14 @@ const TicketCard = ({ ticket }: TicketCardProps) => {
 
         <div className="flex flex-row gap-2 mt-3">
           <p className="text-[12px] font-medium text-[#A9A9A9]">SEATS</p>
-
           {ticket.seats.map((seat) => (
             <div
               key={seat.code}
-              className="flex items-center justify-center w-18.5 h-5.25 rounded-md bg-white/10"
+              className="flex h-5.25 w-18.5 items-center justify-center rounded-md bg-white/10"
             >
-              {ticket.refundableUntil && (
-                <p className="text-center text-[12px] font-medium text-[#A9A9A9]">
-                  Refundable until {ticket.refundableUntil}
-                </p>
-              )}
+              <p className="text-[12px] font-bold text-white">
+                {seat.code} · {seat.ticketType}
+              </p>
             </div>
           ))}
         </div>
@@ -72,7 +71,7 @@ const TicketCard = ({ ticket }: TicketCardProps) => {
       <div className="flex flex-col w-75 h-full border-l border-dashed border-[#2A2C3D] px-6">
         <div className="flex flex-col mt-5">
           <p className="text-[12px] font-medium text-[#A9A9A9]">ORDER</p>
-          <p className="text-sm font-medium leading-1 text-white">
+          <p className="text-sm font-medium leading-1.5 text-white">
             {ticket.orderReference}
           </p>
         </div>
@@ -86,10 +85,12 @@ const TicketCard = ({ ticket }: TicketCardProps) => {
           </div>
 
           <button
-            disabled={!ticket.isRefundable}
-            className=" h-8.75 w-full rounded-full bg-white/10 text-sm font-bold text-white enabled:cursor-pointer enabled:hover:bg-white/20 disabled:cursor-default disabled:text-white/30"
+            type="button"
+            onClick={() => onRefund(ticket.orderReference)}
+            disabled={!ticket.isRefundable || isRefunding}
+            className="h-8.75 w-full rounded-full bg-white/10 text-sm font-bold text-white enabled:cursor-pointer enabled:hover:bg-white/20 disabled:cursor-default disabled:text-white/30"
           >
-            Refund
+            {isRefunding ? "Refunding..." : "Refund"}
           </button>
 
           <div className="w-full flex justify-center">
