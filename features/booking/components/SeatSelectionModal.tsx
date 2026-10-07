@@ -220,9 +220,24 @@ const SeatSelectionModal = ({
     return "cursor-pointer border-white/10 bg-[#1B2030] text-white hover:border-white/30";
   };
 
+  const getSelectedTicketType = (seatId: number) => {
+    const selectedType = ticketTypesBySeat[seatId] ?? "adult";
+
+    return availableTicketTypes.find(
+      (ticketType) => ticketType.slug === selectedType,
+    );
+  };
+
+  const previewSubtotal = selectedSeats.reduce((total, seat) => {
+    const ticketType = getSelectedTicketType(seat.id);
+    const priceRatio = ticketType?.priceRatio ?? 1;
+
+    return total + session.price * priceRatio;
+  }, 0);
+
   return (
     <Modal onClose={onClose}>
-      <div className="w-225 max-w-[calc(100vw-40px)] rounded-2xl bg-[#070C1C] p-6 text-white">
+      <div className="w-245 max-w-[calc(100vw-40px)] rounded-2xl bg-[#070C1C] px-6 py-5 text-white">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold">
@@ -242,7 +257,40 @@ const SeatSelectionModal = ({
             ×
           </button>
         </div>
+        <div className="mt-5 flex items-center gap-4">
+          <div className="flex flex-1 rounded-full bg-[#1B2030] p-1">
+            <button
+              type="button"
+              onClick={() => setStep("seats")}
+              className={`flex h-7 flex-1 cursor-pointer items-center justify-center rounded-full text-[11px] font-semibold ${step === "seats" ? "bg-[#EC3013] text-white" : "text-white/70"}`}
+            >
+              SEATS
+            </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                if (hold) setStep("checkout");
+              }}
+              disabled={!hold}
+              className={`flex h-7 flex-1 items-center justify-center rounded-full text-[11px] font-semibold ${hold ? "cursor-pointer" : "cursor-not-allowed"} ${step === "checkout" ? "bg-[#EC3013] text-white" : "text-white/70"}`}
+            >
+              CHECKOUT
+            </button>
+          </div>
+
+          {hold && (
+            <div className="flex min-w-24 flex-col items-center justify-center rounded-lg bg-[#1B2030] px-3 py-2">
+              <span className="text-[8px] font-medium uppercase tracking-wide text-white/50">
+                Seats held
+              </span>
+
+              <span className="mt-0.5 text-[12px] font-semibold text-white">
+                {formattedTime}
+              </span>
+            </div>
+          )}
+        </div>
         {step === "seats" && (
           <>
             {isLoading && (
@@ -258,176 +306,358 @@ const SeatSelectionModal = ({
             )}
 
             {data && (
-              <>
-                <div className="mx-auto mt-8 h-1.5 w-100 rounded-full bg-white/20" />
+              <div className="mt-5 grid grid-cols-[minmax(0,1fr)_280px] gap-5">
+                <div className="pr-5">
+                  <div className="h-7 w-full rounded-md bg-[#1B2030]">
+                    <p className="flex h-full items-center justify-center text-[10px] font-medium uppercase text-white/70">
+                      Screen
+                    </p>
+                  </div>
 
-                <p className="mt-2 text-center text-[11px] uppercase tracking-widest text-white/40">
-                  Screen
-                </p>
+                  <div className="mt-8 flex flex-col gap-7">
+                    {data.data.sections.map((section) => (
+                      <div key={section.name}>
+                        <h3 className="mb-3 text-[12px] font-medium uppercase text-white/50">
+                          {section.name}
+                        </h3>
 
-                <div className="mt-8 flex flex-col gap-7">
-                  {data.data.sections.map((section) => (
-                    <div key={section.name}>
-                      <h3 className="mb-3 text-[12px] font-medium uppercase text-white/50">
-                        {section.name}
-                      </h3>
+                        <div className="flex flex-col gap-2">
+                          {section.rows.map((row) => (
+                            <div
+                              key={row.label}
+                              className="flex items-center gap-3"
+                            >
+                              <span className="w-5 text-[11px] font-medium text-white/50">
+                                {row.label}
+                              </span>
 
-                      <div className="flex flex-col gap-2">
-                        {section.rows.map((row) => (
-                          <div
-                            key={row.label}
-                            className="flex items-center gap-3"
-                          >
-                            <span className="w-5 text-[11px] font-medium text-white/50">
-                              {row.label}
-                            </span>
+                              <div className="flex items-center">
+                                {row.seats.map((seat) => {
+                                  if (seat.state === "unavailable") {
+                                    return (
+                                      <span
+                                        key={seat.id}
+                                        className={`h-8 w-8 ${seat.aisleAfter ? "mr-4" : "mr-1.5"}`}
+                                      />
+                                    );
+                                  }
 
-                            <div className="flex items-center">
-                              {row.seats.map((seat) => {
-                                if (seat.state === "unavailable") {
+                                  const isDisabled =
+                                    seat.state === "sold" ||
+                                    (seat.state === "held" && !seat.isMine);
+
                                   return (
-                                    <span
+                                    <div
                                       key={seat.id}
-                                      className={`h-8 w-8 ${seat.aisleAfter ? "mr-4" : "mr-1.5"}`}
-                                    />
-                                  );
-                                }
-
-                                const isDisabled =
-                                  seat.state === "sold" ||
-                                  (seat.state === "held" && !seat.isMine);
-
-                                return (
-                                  <div
-                                    key={seat.id}
-                                    className={`flex ${seat.aisleAfter ? "mr-4" : "mr-1.5"}`}
-                                  >
-                                    <button
-                                      type="button"
-                                      disabled={isDisabled}
-                                      onClick={() => handleSeatClick(seat)}
-                                      className={`flex h-8 w-8 items-center justify-center rounded-md border text-[11px] font-semibold transition-colors ${getSeatClassName(seat)}`}
+                                      className={`flex ${seat.aisleAfter ? "mr-4" : "mr-1.5"}`}
                                     >
-                                      {seat.label}
-                                    </button>
-                                  </div>
-                                );
-                              })}
+                                      <button
+                                        type="button"
+                                        disabled={isDisabled}
+                                        onClick={() => handleSeatClick(seat)}
+                                        className={`flex h-8 w-8 items-center justify-center rounded-md border text-[11px] font-semibold transition-colors ${getSeatClassName(seat)}`}
+                                      >
+                                        {seat.label}
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-7 flex items-center justify-center gap-4 text-[9px] text-white/50">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded bg-[#1B2030] ring-1 ring-white/20" />
+                      <span>Available</span>
                     </div>
-                  ))}
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded bg-[#EC3013]" />
+                      <span>Selected</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded bg-white/5" />
+                      <span>Sold</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded bg-[#A86A13]/20" />
+                      <span>Held by another user</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-8 border-t border-white/10 pt-5">
-                  {bookingError && (
-                    <p className="mb-3 text-sm text-[#EC3013]">
-                      {bookingError}
-                    </p>
-                  )}
+                <aside className="flex min-h-85 flex-col border-l border-white/10 pl-5">
+                  <p className="text-sm font-semibold text-white">
+                    Your seats · Max {maxSeatsPerOrder}
+                  </p>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Your seats · Max 3
-                      </p>
+                  <div className="mt-3 flex flex-col gap-3">
+                    {selectedSeats.length === 0 && (
+                      <div className="rounded-xl bg-[#1B2030] p-4">
+                        <p className="text-[11px] text-white/40">
+                          Select a seat from the map.
+                        </p>
+                      </div>
+                    )}
 
-                      <p className="mt-1 text-[12px] text-white/50">
-                        {selectedSeats.length
-                          ? selectedSeats.map((seat) => seat.code).join(", ")
-                          : "No seats selected"}
+                    {selectedSeats.map((seat) => {
+                      const selectedTicketType = getSelectedTicketType(seat.id);
+                      const price =
+                        session.price * (selectedTicketType?.priceRatio ?? 1);
+
+                      return (
+                        <div
+                          key={seat.id}
+                          className="rounded-xl bg-[#1B2030] p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-[9px] text-white/50">
+                                Seat
+                              </span>
+
+                              <span className="text-[11px] font-semibold text-white">
+                                {seat.code}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className="text-[11px] font-semibold text-white">
+                                ₾
+                                {Number.isInteger(price)
+                                  ? price
+                                  : price.toFixed(2)}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSeatClick(seat)}
+                                className="cursor-pointer text-[13px] text-white/50 hover:text-white"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex gap-2">
+                            {availableTicketTypes.map((ticketType) => {
+                              const isActive =
+                                (ticketTypesBySeat[seat.id] ?? "adult") ===
+                                ticketType.slug;
+
+                              return (
+                                <button
+                                  key={ticketType.id}
+                                  type="button"
+                                  onClick={() =>
+                                    setTicketTypesBySeat((current) => ({
+                                      ...current,
+                                      [seat.id]: ticketType.slug,
+                                    }))
+                                  }
+                                  className={`flex-1 cursor-pointer rounded-full px-2 py-2 text-[9px] font-medium transition-colors ${
+                                    isActive
+                                      ? "bg-[#EC3013] text-white"
+                                      : "bg-[#101525] text-white/70 hover:bg-white/10"
+                                  }`}
+                                >
+                                  {ticketType.name}{" "}
+                                  {Math.round(ticketType.priceRatio * 100)}%
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {selectedTicketType?.note && (
+                            <p className="mt-2 text-[9px] text-white/40">
+                              {selectedTicketType.note}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-auto pt-6">
+                    {bookingError && (
+                      <p className="mb-3 text-[11px] text-[#EC3013]">
+                        {bookingError}
                       </p>
+                    )}
+
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-[10px] font-medium uppercase text-white/50">
+                        Subtotal
+                      </span>
+
+                      <span className="text-lg font-bold text-white">
+                        ₾
+                        {Number.isInteger(previewSubtotal)
+                          ? previewSubtotal
+                          : previewSubtotal.toFixed(2)}
+                      </span>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => holdMutation.mutate(createHoldPayload())}
                       disabled={!selectedSeats.length || holdMutation.isPending}
-                      className="h-10.5 cursor-pointer rounded-full bg-[#EC3013] px-7 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-10 w-full cursor-pointer items-center justify-center rounded-full bg-[#EC3013] text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      {holdMutation.isPending
-                        ? "Holding..."
-                        : "Next to checkout"}
+                      {holdMutation.isPending ? "Holding..." : "Next: Checkout"}
                     </button>
                   </div>
-                </div>
-              </>
+                </aside>
+              </div>
             )}
           </>
         )}
 
         {step === "checkout" && hold && (
-          <div className="mt-8">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-white">Your seats</p>
+          <div className="mt-5">
+            <div className="grid grid-cols-[minmax(0,1fr)_250px] gap-5">
+              <div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+                  <div className="col-span-2">
+                    <label className="mb-1.5 block text-[10px] font-medium text-white">
+                      Full Name
+                    </label>
 
-              <p className="text-sm font-semibold text-[#EC3013]">
-                {formattedTime}
-              </p>
-            </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. John Doe"
+                      className="h-10 w-full rounded-lg border border-white/5 bg-[#1B2030] px-3 text-[12px] text-white outline-none placeholder:text-white/30 focus:border-white/20"
+                    />
+                  </div>
 
-            <div className="rounded-xl bg-[#1B2030] p-5">
-              <div className="flex flex-col gap-3">
-                {selectedSeats.map((seat) => {
-                  const holdSeat = hold.seats.find(
-                    (item) => item.seatId === seat.id,
-                  );
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-medium text-white">
+                      Email
+                    </label>
 
-                  return (
-                    <div
-                      key={seat.id}
-                      className="flex items-center justify-between gap-4"
-                    >
-                      <span className="w-12 text-sm font-semibold text-white">
-                        {seat.code}
-                      </span>
+                    <input
+                      type="email"
+                      placeholder="e.g. john@example.com"
+                      className="h-10 w-full rounded-lg border border-white/5 bg-[#1B2030] px-3 text-[12px] text-white outline-none placeholder:text-white/30 focus:border-white/20"
+                    />
+                  </div>
 
-                      <select
-                        value={ticketTypesBySeat[seat.id] ?? "adult"}
-                        disabled={holdMutation.isPending}
-                        onChange={(event) => {
-                          const ticketType = event.target
-                            .value as TicketTypeSlug;
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-medium text-white">
+                      Mobile Number
+                    </label>
 
-                          setTicketTypesBySeat((current) => ({
-                            ...current,
-                            [seat.id]: ticketType,
-                          }));
+                    <input
+                      type="tel"
+                      placeholder="e.g. 555 12 34 56"
+                      className="h-10 w-full rounded-lg border border-white/5 bg-[#1B2030] px-3 text-[12px] text-white outline-none placeholder:text-white/30 focus:border-white/20"
+                    />
+                  </div>
 
-                          holdMutation.mutate(
-                            createHoldPayload(seat.id, ticketType),
-                          );
-                        }}
-                        className="cursor-pointer rounded-lg bg-[#101525] px-3 py-2 text-sm text-white outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {availableTicketTypes.map((ticketType) => (
-                          <option key={ticketType.id} value={ticketType.slug}>
-                            {ticketType.name}
-                          </option>
-                        ))}
-                      </select>
+                  <div className="col-span-2">
+                    <label className="mb-1.5 block text-[10px] font-medium text-white">
+                      Card Number
+                    </label>
 
-                      <span className="ml-auto text-sm font-semibold text-white">
-                        ₾{holdSeat?.price ?? 0}
+                    <input
+                      type="text"
+                      placeholder="4242 4242 4242 4242"
+                      className="h-10 w-full rounded-lg border border-white/5 bg-[#1B2030] px-3 text-[12px] text-white outline-none placeholder:text-white/30 focus:border-white/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-medium text-white">
+                      Expiry
+                    </label>
+
+                    <input
+                      type="text"
+                      placeholder="MM/YY"
+                      className="h-10 w-full rounded-lg border border-white/5 bg-[#1B2030] px-3 text-[12px] text-white outline-none placeholder:text-white/30 focus:border-white/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-medium text-white">
+                      CVV
+                    </label>
+
+                    <input
+                      type="password"
+                      placeholder="123"
+                      maxLength={3}
+                      className="h-10 w-full rounded-lg border border-white/5 bg-[#1B2030] px-3 text-[12px] text-white outline-none placeholder:text-white/30 focus:border-white/20"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <aside className="flex flex-col">
+                <p className="mb-2 text-[10px] font-semibold text-white">
+                  Summary
+                </p>
+
+                <div className="rounded-xl bg-[#1B2030] p-3">
+                  <p className="text-[11px] font-bold text-white">
+                    {session.venue.name}
+                  </p>
+
+                  <p className="mt-1 text-[9px] text-white/50">
+                    Hall {session.hall.name} · {session.time}
+                  </p>
+
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-white/50">Seats</span>
+
+                      <span className="text-[10px] font-medium text-white">
+                        {hold.seats.map((seat) => seat.code).join(", ")}
                       </span>
                     </div>
-                  );
-                })}
-              </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-5">
-                <span className="text-sm text-white/60">Subtotal</span>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-[10px] text-white/50">Tickets</span>
 
-                <span className="text-lg font-bold text-white">
-                  ₾{hold.subtotal}
-                </span>
-              </div>
+                      <span className="text-[10px] font-medium text-white">
+                        {hold.seats
+                          .map((seat) => seat.ticketType.name)
+                          .join(", ")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-8">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[10px] font-medium uppercase text-white/50">
+                      Subtotal
+                    </span>
+
+                    <span className="text-lg font-bold text-white">
+                      ₾{hold.subtotal}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="flex h-10 w-full cursor-pointer items-center justify-center rounded-full bg-[#EC3013] text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
+                  >
+                    Pay · Complete order
+                  </button>
+                </div>
+              </aside>
             </div>
 
             {bookingError && (
-              <p className="mt-3 text-sm text-[#EC3013]">{bookingError}</p>
+              <p className="mt-3 text-[12px] text-[#EC3013]">{bookingError}</p>
             )}
           </div>
         )}
