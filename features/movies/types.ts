@@ -53,3 +53,39 @@ export type MovieDetails = Movie & {
 export type MovieDetailsResponse = {
   data: MovieDetails;
 };
+
+export type MovieSession = {
+  id: number;
+  startsAt: string;
+  date: string;
+  time: string;
+  timeBand: string;
+  price: number;
+  seatsLeft: number;
+  isSoldOut: boolean;
+  hall: {
+    id: number;
+    name: string;
+  };
+  format: MovieFormat;
+  language: {
+    id: number;
+    slug: string;
+    name: string;
+    code: string;
+  };
+};
+
+export type MovieSessionsVenue = {
+  venue: {
+    id: number;
+    slug: string;
+    name: string;
+    city: string;
+  };
+  sessions: MovieSession[];
+};
+
+export type MovieSessionsResponse = {
+  data: MovieSessionsVenue[];
+};

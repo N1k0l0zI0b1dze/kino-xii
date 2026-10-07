@@ -25,7 +25,7 @@ const Navbar = () => {
       className={
         isHomePage
           ? "absolute top-0 left-0 z-50 w-full bg-transparent"
-          : "relative z-50 w-full bg-[#070C1C]"
+          : "relative z-50 w-full bg-transparent"
       }
     >
       <nav className="relative z-50 flex h-27.75 items-center gap-4 px-15">
