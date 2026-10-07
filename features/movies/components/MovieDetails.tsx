@@ -41,6 +41,7 @@ const MovieDetails = ({ movieSlug }: MovieDetailsProps) => {
         <MovieSessions
           movieSlug={movieSlug}
           availableDates={movie.availableDates}
+          ageRatingMinAge={movie.ageRating.minAge}
         />
 
         <MovieDetailsInfo movie={movie} />

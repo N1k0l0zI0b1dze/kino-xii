@@ -5,15 +5,24 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getMovieSessions } from "../api/getMovieSessions";
 import type { MovieSession } from "../types";
+import SeatSelectionModal from "@/features/booking/components/SeatSelectionModal";
 
 type MovieSessionsProps = {
   movieSlug: string;
   availableDates: string[];
+  ageRatingMinAge: number;
 };
 
-const MovieSessions = ({ movieSlug, availableDates }: MovieSessionsProps) => {
+const MovieSessions = ({
+  movieSlug,
+  availableDates,
+  ageRatingMinAge,
+}: MovieSessionsProps) => {
   const dates = availableDates.slice(0, 7);
   const [selectedDate, setSelectedDate] = useState(dates[0] ?? "");
+  const [selectedSession, setSelectedSession] = useState<MovieSession | null>(
+    null,
+  );
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["movie-sessions", movieSlug, selectedDate],
@@ -140,6 +149,7 @@ const MovieSessions = ({ movieSlug, availableDates }: MovieSessionsProps) => {
                           <button
                             key={session.id}
                             type="button"
+                            onClick={() => setSelectedSession(session)}
                             disabled={session.isSoldOut}
                             className="flex w-fit cursor-pointer gap-2 bg-transparent text-left disabled:cursor-not-allowed disabled:opacity-40"
                           >
@@ -194,6 +204,13 @@ const MovieSessions = ({ movieSlug, availableDates }: MovieSessionsProps) => {
           </div>
         )}
       </div>
+      {selectedSession && (
+        <SeatSelectionModal
+          session={selectedSession}
+          ageRatingMinAge={ageRatingMinAge}
+          onClose={() => setSelectedSession(null)}
+        />
+      )}
     </section>
   );
 };

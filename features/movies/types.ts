@@ -55,6 +55,7 @@ export type MovieDetailsResponse = {
 };
 
 export type MovieSession = {
+  venue: any;
   id: number;
   startsAt: string;
   date: string;
@@ -88,4 +89,42 @@ export type MovieSessionsVenue = {
 
 export type MovieSessionsResponse = {
   data: MovieSessionsVenue[];
+};
+
+export type SeatState = "available" | "sold" | "held" | "unavailable";
+
+export type SessionSeat = {
+  id: number;
+  code: string;
+  label: string;
+  state: SeatState;
+  aisleAfter: boolean;
+  isMine: boolean;
+};
+
+export type SeatRow = {
+  label: string;
+  seats: SessionSeat[];
+};
+
+export type SeatSection = {
+  name: string;
+  rows: SeatRow[];
+};
+
+export type SeatMapResponse = {
+  data: {
+    sessionId: number;
+    hall: {
+      id: number;
+      name: string;
+      venue: {
+        id: number;
+        slug: string;
+        name: string;
+        city: string;
+      };
+    };
+    sections: SeatSection[];
+  };
 };
