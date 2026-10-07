@@ -28,7 +28,7 @@ const Navbar = () => {
           : "relative z-50 w-full bg-[#070C1C]"
       }
     >
-      <nav className="flex h-27.75 items-center gap-4 border-b px-15">
+      <nav className="relative z-50 flex h-27.75 items-center gap-4 px-15">
         <div className="flex shrink-0 items-center gap-9">
           <Link href="/" aria-label="Go to homepage">
             <Image
