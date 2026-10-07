@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getMovieDetails } from "../api/getMovieDetails";
 import MovieDetailsHero from "./MovieDetailsHero";
 import MovieSessions from "./MovieSessions";
+import MovieDetailsInfo from "./MovieDetailsInfo";
 
 type MovieDetailsProps = {
   movieSlug: string;
@@ -36,10 +37,14 @@ const MovieDetails = ({ movieSlug }: MovieDetailsProps) => {
     <main className="min-h-screen bg-[#070C1C] text-white">
       <MovieDetailsHero movie={movie} />
 
-      <MovieSessions
-        movieSlug={movieSlug}
-        availableDates={movie.availableDates}
-      />
+      <section className="grid grid-cols-[minmax(0,1fr)_441px]">
+        <MovieSessions
+          movieSlug={movieSlug}
+          availableDates={movie.availableDates}
+        />
+
+        <MovieDetailsInfo movie={movie} />
+      </section>
     </main>
   );
 };
