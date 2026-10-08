@@ -7,6 +7,7 @@ import TicketCard from "./TicketCard";
 import { getTickets } from "../api/getTickets";
 import { refundOrder } from "../api/refundOrder";
 import type { Ticket, TicketOrder, TicketsResponse } from "../types";
+import RefundConfirmationModal from "./RefundConfirmationModal";
 
 const getRefundableUntil = (startsAt: string) => {
   const sessionStart = new Date(startsAt);
@@ -56,10 +57,14 @@ const mapTicketOrderToTicket = (order: TicketOrder): Ticket => {
 
 const MyTickets = () => {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundOrderReference, setRefundOrderReference] = useState<
+    string | null
+  >(null);
 
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["tickets"],
     queryFn: getTickets,
   });
@@ -67,7 +72,13 @@ const MyTickets = () => {
   const refundMutation = useMutation({
     mutationFn: refundOrder,
 
+    onMutate: () => {
+      setRefundError(null);
+    },
+
     onSuccess: (response) => {
+      setRefundError(null);
+
       queryClient.setQueryData<TicketsResponse>(["tickets"], (oldData) => {
         if (!oldData) return oldData;
 
@@ -79,19 +90,29 @@ const MyTickets = () => {
       });
     },
 
-    onError: (error) => {
-      alert(error.message);
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Refund failed. Please try again.";
+
+      setRefundError(message);
+      setRefundOrderReference(null);
     },
   });
 
   const handleRefund = (orderReference: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to refund this order?",
-    );
+    setRefundOrderReference(orderReference);
+  };
 
-    if (!confirmed) return;
+  const confirmRefund = () => {
+    if (!refundOrderReference) return;
 
-    refundMutation.mutate(orderReference);
+    refundMutation.mutate(refundOrderReference, {
+      onSuccess: () => {
+        setRefundOrderReference(null);
+      },
+    });
   };
 
   const tickets = (data?.data ?? []).map(mapTicketOrderToTicket);
@@ -111,63 +132,95 @@ const MyTickets = () => {
   }
 
   if (error) {
-    return <p>Failed to load tickets.</p>;
+    return (
+      <div className="mt-9 flex min-h-40 flex-col items-center justify-center gap-3">
+        <p className="text-sm text-[#EC3013]">Failed to load tickets.</p>
+
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="cursor-pointer rounded-full bg-[#1E2031] px-4 py-2 text-xs font-semibold text-white"
+        >
+          Try again
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="mt-9 flex flex-col gap-4">
-      <div className="flex h-9.75 w-49.75 rounded-xl bg-[#1E2031] px-1.25 py-1.25">
-        <button
-          type="button"
-          onClick={() => setActiveTab("upcoming")}
-          disabled={activeTab === "upcoming"}
-          className={`h-full w-full rounded-[10px] text-[14px] ${
-            activeTab === "upcoming"
-              ? "bg-[#2A2C3D] text-white"
-              : "cursor-pointer text-[#A9A9A9]"
-          }`}
-        >
-          Upcoming {upcomingCount}
-        </button>
+    <>
+      <div className="mt-9 flex flex-col gap-4">
+        <div className="flex h-9.75 w-49.75 rounded-xl bg-[#1E2031] px-1.25 py-1.25">
+          <button
+            type="button"
+            onClick={() => setActiveTab("upcoming")}
+            disabled={activeTab === "upcoming"}
+            className={`h-full w-full rounded-[10px] text-[14px] ${
+              activeTab === "upcoming"
+                ? "bg-[#2A2C3D] text-white"
+                : "cursor-pointer text-[#A9A9A9]"
+            }`}
+          >
+            Upcoming {upcomingCount}
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("past")}
-          disabled={activeTab === "past"}
-          className={`h-full w-full rounded-[10px] text-[14px] ${
-            activeTab === "past"
-              ? "bg-[#2A2C3D] text-white"
-              : "cursor-pointer text-[#A9A9A9]"
-          }`}
-        >
-          Past {pastCount}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("past")}
+            disabled={activeTab === "past"}
+            className={`h-full w-full rounded-[10px] text-[14px] ${
+              activeTab === "past"
+                ? "bg-[#2A2C3D] text-white"
+                : "cursor-pointer text-[#A9A9A9]"
+            }`}
+          >
+            Past {pastCount}
+          </button>
+        </div>
 
-      <div className="mt-5 flex flex-col gap-4">
-        {visibleTickets.length === 0 ? (
-          <div className="flex min-h-40 items-center justify-center">
-            <p className="text-sm text-[#A9A9A9]">
-              {activeTab === "upcoming"
-                ? "No upcoming tickets."
-                : "No past tickets."}
-            </p>
+        {refundError && (
+          <div className="rounded-xl bg-[#EC3013]/10 px-4 py-3">
+            <p className="text-[12px] text-[#EC3013]">{refundError}</p>
           </div>
-        ) : (
-          visibleTickets.map((ticket) => (
-            <TicketCard
-              key={ticket.id}
-              ticket={ticket}
-              onRefund={handleRefund}
-              isRefunding={
-                refundMutation.isPending &&
-                refundMutation.variables === ticket.orderReference
-              }
-            />
-          ))
         )}
+
+        <div className="mt-5 flex flex-col gap-4">
+          {visibleTickets.length === 0 ? (
+            <div className="flex min-h-40 items-center justify-center">
+              <p className="text-sm text-[#A9A9A9]">
+                {activeTab === "upcoming"
+                  ? "No upcoming tickets."
+                  : "No past tickets."}
+              </p>
+            </div>
+          ) : (
+            visibleTickets.map((ticket) => (
+              <TicketCard
+                key={ticket.id}
+                ticket={ticket}
+                onRefund={handleRefund}
+                isRefunding={
+                  refundMutation.isPending &&
+                  refundMutation.variables === ticket.orderReference
+                }
+              />
+            ))
+          )}
+        </div>
       </div>
-    </div>
+
+      {refundOrderReference && (
+        <RefundConfirmationModal
+          isPending={refundMutation.isPending}
+          onConfirm={confirmRefund}
+          onClose={() => {
+            if (!refundMutation.isPending) {
+              setRefundOrderReference(null);
+            }
+          }}
+        />
+      )}
+    </>
   );
 };
 

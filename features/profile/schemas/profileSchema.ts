@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const profileSchema = z.object({
-  fullName: z.string().min(1, "Full name is required"),
+  fullName: z
+    .string()
+    .min(1, "Name is required")
+    .min(3, "Name must be at least 3 characters")
+    .max(50, "Name must not exceed 50 characters"),
 
   mobileNumber: z
     .string()

@@ -38,7 +38,7 @@ const PersonalInformation = ({ user }: PersonalInformationProps) => {
     handleSubmit,
     setError,
     clearErrors,
-    formState: { errors },
+    formState: { errors, isDirty, isValid },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     mode: "onBlur",
@@ -100,6 +100,13 @@ const PersonalInformation = ({ user }: PersonalInformationProps) => {
       noValidate
       className="flex h-auto w-220 flex-col gap-4.5"
     >
+      {!user.profileComplete && (
+        <div className="rounded-xl border border-[#F4A51C]/30 bg-[#F4A51C]/10 px-4 py-3">
+          <p className="text-sm font-medium text-[#F4A51C]">
+            Please complete your profile to enable booking.
+          </p>
+        </div>
+      )}
       <div>
         <label
           htmlFor="fullName"
@@ -254,7 +261,7 @@ const PersonalInformation = ({ user }: PersonalInformationProps) => {
 
       <button
         type="submit"
-        disabled={updateMutation.isPending}
+        disabled={!isDirty || !isValid || updateMutation.isPending}
         className="mt-4.5 h-10.25 w-35.25 rounded-full bg-[#EC3013] text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         {updateMutation.isPending ? "Saving..." : "Save changes"}

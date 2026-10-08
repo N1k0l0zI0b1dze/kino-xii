@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 export const checkoutSchema = z.object({
-  fullName: z.string().trim().min(2, "Full name is required"),
+  fullName: z
+    .string()
+    .min(3, "Name must be at least 3 characters")
+    .max(50, "Name must not exceed 50 characters"),
 
   email: z.string().trim().email("Enter a valid email address"),
 

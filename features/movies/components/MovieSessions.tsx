@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { getMovieSessions } from "../api/getMovieSessions";
@@ -23,18 +22,21 @@ const MovieSessions = ({
   ageRatingMinAge,
 }: MovieSessionsProps) => {
   const dates = availableDates.slice(0, 7);
+
   const [selectedDate, setSelectedDate] = useState(dates[0] ?? "");
   const [selectedSession, setSelectedSession] = useState<MovieSession | null>(
     null,
   );
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["movie-sessions", movieSlug, selectedDate],
     queryFn: () => getMovieSessions(movieSlug, selectedDate),
     enabled: !!selectedDate,
   });
 
   const { openLogin } = useAuthModal();
+  const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data: currentUserData } = useQuery({
     queryKey: ["current-user"],
@@ -43,10 +45,15 @@ const MovieSessions = ({
   });
 
   const currentUser = currentUserData?.data;
-  const queryClient = useQueryClient();
-  const router = useRouter();
+
+  const isAgeRestricted =
+    currentUser?.age !== null &&
+    currentUser?.age !== undefined &&
+    currentUser.age < ageRatingMinAge;
 
   const openBooking = (session: MovieSession) => {
+    if (isAgeRestricted) return;
+
     if (!currentUser) {
       openLogin(async () => {
         const refreshedUser = await queryClient.fetchQuery({
@@ -56,6 +63,16 @@ const MovieSessions = ({
 
         if (!refreshedUser?.data.profileComplete) {
           router.push("/profile");
+          return;
+        }
+
+        const refreshedAge = refreshedUser.data.age;
+
+        if (
+          refreshedAge !== null &&
+          refreshedAge !== undefined &&
+          refreshedAge < ageRatingMinAge
+        ) {
           return;
         }
 
@@ -133,6 +150,13 @@ const MovieSessions = ({
         </p>
       </div>
 
+      {isAgeRestricted && (
+        <p className="mt-4 text-sm text-[#EC3013]">
+          This film is rated {ageRatingMinAge}+. You cannot buy tickets for it
+          with this account.
+        </p>
+      )}
+
       <div className="mt-5 flex gap-2">
         {dates.map((date) => {
           const formattedDate = formatDate(date);
@@ -159,94 +183,147 @@ const MovieSessions = ({
 
       <div className="mt-6">
         {isLoading && (
-          <p className="text-sm text-white/60">Loading sessions...</p>
-        )}
-
-        {error && (
-          <p className="text-sm text-[#EC3013]">Failed to load sessions.</p>
-        )}
-
-        {!isLoading && !error && data && (
           <div className="flex flex-wrap items-start gap-6">
-            {venues.map((venueGroup) => (
-              <div
-                key={venueGroup.venue.id}
-                className={venueGroup.halls.length > 1 ? "basis-full" : "w-fit"}
-              >
-                <h3 className="mb-3 text-sm font-semibold text-white">
-                  {venueGroup.venue.name}
-                </h3>
+            {Array.from({ length: 3 }).map((_, venueIndex) => (
+              <div key={venueIndex} className="w-fit animate-pulse">
+                <div className="mb-3 h-4 w-28 rounded bg-white/10" />
 
-                <div className="grid w-fit grid-cols-[repeat(2,max-content)] justify-start gap-3">
-                  {venueGroup.halls.map((hallGroup) => (
-                    <div
-                      key={hallGroup.hall.id}
-                      className="w-fit rounded-xl bg-[#1B2030] p-3"
-                    >
-                      <p className="mb-2 text-[12px] font-medium text-white">
-                        Hall {hallGroup.hall.name}
-                      </p>
+                <div className="rounded-xl bg-[#1B2030] p-3">
+                  <div className="mb-2 h-3 w-16 rounded bg-white/10" />
 
-                      <div className="grid w-fit grid-cols-[repeat(2,max-content)] gap-2">
-                        {hallGroup.sessions.map((session) => (
-                          <button
-                            key={session.id}
-                            type="button"
-                            onClick={() => openBooking(session)}
-                            disabled={session.isSoldOut}
-                            className="flex w-fit cursor-pointer gap-2 bg-transparent text-left disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            {Array.from({
-                              length: hallGroup.sessions.length === 1 ? 2 : 1,
-                            }).map((_, duplicate) => (
-                              <div
-                                key={duplicate}
-                                aria-hidden="true"
-                                className="pointer-events-none flex w-fit overflow-hidden rounded-2xl bg-[#101525]"
-                              >
-                                <div className="relative flex flex-col justify-center px-3.75 py-3">
-                                  <span className="self-center text-xl font-bold text-white">
-                                    {session.time}
-                                  </span>
+                  <div className="flex gap-2">
+                    {Array.from({ length: 2 }).map((_, sessionIndex) => (
+                      <div
+                        key={sessionIndex}
+                        className="flex overflow-hidden rounded-2xl bg-[#101525]"
+                      >
+                        <div className="flex flex-col gap-2 px-4 py-4">
+                          <div className="h-5 w-12 rounded bg-white/10" />
+                          <div className="h-3 w-20 rounded bg-white/10" />
+                        </div>
 
-                                  <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-sm text-white/60">
-                                      {session.language.code}
-                                    </span>
-
-                                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
-                                      {session.format.name}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="relative flex flex-col justify-center border-l border-dashed border-white/60 px-3.75 py-3">
-                                  <span className="text-xl font-bold text-[#EC3013]">
-                                    ₾ {session.price}
-                                  </span>
-
-                                  <span className="mt-2 text-sm text-white/60">
-                                    {session.isSoldOut
-                                      ? "Sold out"
-                                      : `${session.seatsLeft} left`}
-                                  </span>
-
-                                  <span className="absolute -top-2 -left-2 h-4 w-4 rounded-full bg-[#1B2030]" />
-                                  <span className="absolute -bottom-2 -left-2 h-4 w-4 rounded-full bg-[#1B2030]" />
-                                </div>
-                              </div>
-                            ))}
-                          </button>
-                        ))}
+                        <div className="flex flex-col gap-2 border-l border-dashed border-white/10 px-4 py-4">
+                          <div className="h-5 w-12 rounded bg-white/10" />
+                          <div className="h-3 w-14 rounded bg-white/10" />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {error && (
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-[#EC3013]">Failed to load sessions.</p>
+
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="cursor-pointer rounded-full bg-[#1B2030] px-4 py-2 text-xs font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !error && data && (
+          <>
+            {venues.length === 0 ? (
+              <div className="flex min-h-32 items-center">
+                <p className="text-sm text-white/50">
+                  No sessions available for this date.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-start gap-6">
+                {venues.map((venueGroup) => (
+                  <div
+                    key={venueGroup.venue.id}
+                    className={
+                      venueGroup.halls.length > 1 ? "basis-full" : "w-fit"
+                    }
+                  >
+                    <h3 className="mb-3 text-sm font-semibold text-white">
+                      {venueGroup.venue.name}
+                    </h3>
+
+                    <div className="grid w-fit grid-cols-[repeat(2,max-content)] justify-start gap-3">
+                      {venueGroup.halls.map((hallGroup) => (
+                        <div
+                          key={hallGroup.hall.id}
+                          className="w-fit rounded-xl bg-[#1B2030] p-3"
+                        >
+                          <p className="mb-2 text-[12px] font-medium text-white">
+                            Hall {hallGroup.hall.name}
+                          </p>
+
+                          <div className="grid w-fit grid-cols-[repeat(2,max-content)] gap-2">
+                            {hallGroup.sessions.map((session) => (
+                              <button
+                                key={session.id}
+                                type="button"
+                                onClick={() => openBooking(session)}
+                                disabled={session.isSoldOut || isAgeRestricted}
+                                className="flex w-fit cursor-pointer gap-2 bg-transparent text-left disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                {Array.from({
+                                  length:
+                                    hallGroup.sessions.length === 1 ? 2 : 1,
+                                }).map((_, duplicate) => (
+                                  <div
+                                    key={duplicate}
+                                    aria-hidden="true"
+                                    className="pointer-events-none flex w-fit overflow-hidden rounded-2xl bg-[#101525]"
+                                  >
+                                    <div className="relative flex flex-col justify-center px-3.75 py-3">
+                                      <span className="self-center text-xl font-bold text-white">
+                                        {session.time}
+                                      </span>
+
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <span className="text-sm text-white/60">
+                                          {session.language.code}
+                                        </span>
+
+                                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
+                                          {session.format.name}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="relative flex flex-col justify-center border-l border-dashed border-white/60 px-3.75 py-3">
+                                      <span className="text-xl font-bold text-[#EC3013]">
+                                        ₾ {session.price}
+                                      </span>
+
+                                      <span className="mt-2 text-sm text-white/60">
+                                        {session.isSoldOut
+                                          ? "Sold out"
+                                          : `${session.seatsLeft} left`}
+                                      </span>
+
+                                      <span className="absolute -top-2 -left-2 h-4 w-4 rounded-full bg-[#1B2030]" />
+                                      <span className="absolute -bottom-2 -left-2 h-4 w-4 rounded-full bg-[#1B2030]" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
+
       {selectedSession && (
         <SeatSelectionModal
           session={selectedSession}

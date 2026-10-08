@@ -388,13 +388,24 @@ const SeatSelectionModal = ({
       setTicketTypesBySeat((current) => {
         const next = { ...current };
         delete next[seat.id];
+
         return next;
       });
 
       return;
     }
 
-    if (!maxSeatsPerOrder || selectedSeats.length >= maxSeatsPerOrder) return;
+    if (!maxSeatsPerOrder) return;
+
+    if (selectedSeats.length >= maxSeatsPerOrder) {
+      setBookingError(
+        `You can select up to ${maxSeatsPerOrder} seats per order.`,
+      );
+
+      return;
+    }
+
+    setBookingError(null);
 
     setSelectedSeats((currentSeats) => [...currentSeats, seat]);
 
@@ -539,20 +550,28 @@ const SeatSelectionModal = ({
           {step === "seats" && (
             <>
               {isLoading && (
-                <div className="flex h-80 items-center justify-center">
-                  <p className="text-sm text-white/50">Loading seats...</p>
+                <div className="flex min-h-80 items-center justify-center">
+                  <p className="text-sm text-white/60">Loading seats...</p>
                 </div>
               )}
 
               {error && (
-                <div className="flex h-80 items-center justify-center">
+                <div className="flex min-h-80 flex-col items-center justify-center gap-3">
                   <p className="text-sm text-[#EC3013]">
                     Failed to load seats.
                   </p>
+
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="cursor-pointer rounded-full bg-[#1B2030] px-4 py-2 text-xs font-semibold text-white"
+                  >
+                    Try again
+                  </button>
                 </div>
               )}
 
-              {data && (
+              {!isLoading && !error && data && (
                 <div className="mt-5 grid grid-cols-[minmax(0,1fr)_280px] gap-5">
                   <div className="pr-5">
                     <div className="h-7 w-full rounded-md bg-[#1B2030]">
