@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupFormValues } from "../schemas/signupSchema";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { registerUser } from "../api/register";
 
 type SignupModalProps = {
@@ -15,6 +15,7 @@ type SignupModalProps = {
 };
 
 const SignupModal = ({ onClose, onLogin }: SignupModalProps) => {
+  const queryClient = useQueryClient();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState("");
@@ -24,6 +25,7 @@ const SignupModal = ({ onClose, onLogin }: SignupModalProps) => {
     handleSubmit,
     watch,
     trigger,
+    setError,
     formState: { errors, touchedFields, isValid },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -32,14 +34,54 @@ const SignupModal = ({ onClose, onLogin }: SignupModalProps) => {
 
   const registerMutation = useMutation({
     mutationFn: registerUser,
-    onSuccess: (data) => {
-      console.log("REGISTER SUCCESS:", data);
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["current-user"],
+      });
+
+      onClose();
     },
-    onError: (error) => {
-      console.log("REGISTER ERROR:", error);
+
+    onError: (error: unknown) => {
+      const apiError = error as {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
+
+      const message =
+        apiError.message ?? "Registration failed. Please try again.";
+
+      const usernameError =
+        apiError.errors?.username?.[0] ??
+        (message.toLowerCase().includes("username") ? message : undefined);
+
+      const emailError =
+        apiError.errors?.email?.[0] ??
+        (message.toLowerCase().includes("email") ? message : undefined);
+
+      if (usernameError) {
+        setError("username", {
+          type: "server",
+          message: usernameError,
+        });
+      }
+
+      if (emailError) {
+        setError("email", {
+          type: "server",
+          message: emailError,
+        });
+      }
+
+      if (!usernameError && !emailError) {
+        setError("root.server", {
+          type: "server",
+          message,
+        });
+      }
     },
   });
-
   const usernameIsValid = touchedFields.username && !errors.username;
 
   const emailIsValid = touchedFields.email && !errors.email;
@@ -335,17 +377,23 @@ const SignupModal = ({ onClose, onLogin }: SignupModalProps) => {
             </div>
           </div>
 
+          {errors.root?.server && (
+            <p className="mt-4 text-center text-[12px] text-[#EC3013]">
+              {errors.root.server.message}
+            </p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={!isValid || !!avatarError}
+            disabled={!isValid || !!avatarError || registerMutation.isPending}
             className={`mt-6 h-10.25 w-full rounded-full text-[14px] font-semibold transition-colors ${
-              isValid && !avatarError
+              isValid && !avatarError && !registerMutation.isPending
                 ? "cursor-pointer bg-[#EC3013] text-white"
                 : "cursor-not-allowed bg-[#505261] text-[#A9A9A9]"
             }`}
           >
-            Sign up
+            {registerMutation.isPending ? "Signing up..." : "Sign up"}
           </button>
 
           {/* Switch to login */}

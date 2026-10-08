@@ -9,9 +9,10 @@ import { loginUser } from "../api/login";
 type LoginModalProps = {
   onClose: () => void;
   onSignup: () => void;
+  onSuccess: () => void;
 };
 
-const LoginModal = ({ onClose, onSignup }: LoginModalProps) => {
+const LoginModal = ({ onClose, onSignup, onSuccess }: LoginModalProps) => {
   const {
     register,
     handleSubmit,
@@ -33,13 +34,18 @@ const LoginModal = ({ onClose, onSignup }: LoginModalProps) => {
         queryKey: ["current-user"],
       });
 
-      onClose();
+      onSuccess();
     },
 
-    onError: (error) => {
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Login failed. Please try again.";
+
       setError("root.server", {
         type: "server",
-        message: error.message,
+        message,
       });
     },
   });

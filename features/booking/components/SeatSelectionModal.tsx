@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Modal from "@/components/ui/Modal";
 import { getSeatMap } from "@/features/movies/api/getSeatMap";
@@ -13,6 +13,7 @@ import type { CreateHoldPayload, Hold, TicketTypeSlug } from "../types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
+import { useAuthModal } from "@/features/auth/context/AuthModalProvider";
 
 import {
   checkoutSchema,
@@ -36,6 +37,7 @@ const SeatSelectionModal = ({
   ageRatingMinAge,
   onClose,
 }: SeatSelectionModalProps) => {
+  const queryClient = useQueryClient();
   const [selectedSeats, setSelectedSeats] = useState<SessionSeat[]>([]);
   const [hold, setHold] = useState<Hold | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -45,6 +47,7 @@ const SeatSelectionModal = ({
     Record<number, TicketTypeSlug>
   >({});
   const [paidOrder, setPaidOrder] = useState<PaidOrder | null>(null);
+  const { openLogin } = useAuthModal();
 
   const {
     register,
@@ -156,9 +159,19 @@ const SeatSelectionModal = ({
       setStep("checkout");
     },
 
-    onError: async (error) => {
+    onError: async (error, payload) => {
       if (!(error instanceof HoldRequestError)) {
         setBookingError("Something went wrong.");
+        return;
+      }
+
+      if (error.status === 401) {
+        setBookingError(null);
+
+        openLogin(() => {
+          holdMutation.mutate(payload);
+        });
+
         return;
       }
 
@@ -194,12 +207,26 @@ const SeatSelectionModal = ({
   const orderMutation = useMutation({
     mutationFn: createOrder,
 
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       setBookingError(null);
       setPaidOrder(response.data);
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["tickets"],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["seat-map", session.id],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["movie-sessions"],
+        }),
+      ]);
     },
 
-    onError: async (error) => {
+    onError: async (error, payload) => {
       if (!(error instanceof OrderRequestError)) {
         setBookingError("Something went wrong. Please try again.");
         return;
@@ -207,8 +234,20 @@ const SeatSelectionModal = ({
 
       const { status, data } = error;
 
-      if (status === 422 && data.errors) {
-        Object.entries(data.errors).forEach(([field, messages]) => {
+      if (status === 401) {
+        setBookingError(null);
+
+        openLogin(() => {
+          orderMutation.mutate(payload);
+        });
+
+        return;
+      }
+
+      const hasFieldErrors = data.errors && Object.keys(data.errors).length > 0;
+
+      if (status === 422 && hasFieldErrors) {
+        Object.entries(data.errors!).forEach(([field, messages]) => {
           if (
             field === "fullName" ||
             field === "email" ||
@@ -233,26 +272,67 @@ const SeatSelectionModal = ({
         setSelectedSeats([]);
         setTicketTypesBySeat({});
         setStep("seats");
+
         await refetch();
         return;
       }
 
       if (status === 409) {
+        const contested = data.contested ?? [];
+
         setBookingError(
-          data.contested?.length
-            ? `These seats are no longer available: ${data.contested.join(", ")}`
+          contested.length
+            ? `These seats are no longer available: ${contested.join(", ")}`
             : data.message,
         );
 
         setHold(null);
-        setSelectedSeats([]);
-        setTicketTypesBySeat({});
+
+        if (contested.length > 0) {
+          const contestedSeatIds = new Set(
+            selectedSeats
+              .filter((seat) => contested.includes(seat.code))
+              .map((seat) => seat.id),
+          );
+
+          setSelectedSeats((currentSeats) =>
+            currentSeats.filter((seat) => !contested.includes(seat.code)),
+          );
+
+          setTicketTypesBySeat((current) => {
+            const next = { ...current };
+
+            contestedSeatIds.forEach((seatId) => {
+              delete next[seatId];
+            });
+
+            return next;
+          });
+        } else {
+          setSelectedSeats([]);
+          setTicketTypesBySeat({});
+        }
+
         setStep("seats");
+
         await refetch();
         return;
       }
 
-      setBookingError(data.message);
+      if (status === 403) {
+        setBookingError(data.message);
+        setHold(null);
+        setSelectedSeats([]);
+        setTicketTypesBySeat({});
+        setStep("seats");
+
+        await refetch();
+        return;
+      }
+
+      setBookingError(
+        data.message || "Something went wrong. Please try again.",
+      );
     },
   });
 

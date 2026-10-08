@@ -5,6 +5,7 @@ import QueryProvider from "@/components/providers/QueryProvider";
 import { Archivo } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { AuthModalProvider } from "@/features/auth/context/AuthModalProvider";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -33,9 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className={`min-h-full flex flex-col ${archivo.className}`}>
         <QueryProvider>
-          <Navbar />
-          {children}
-          <Footer />
+          <AuthModalProvider>
+            <Navbar />
+            {children}
+            <Footer />
+          </AuthModalProvider>
         </QueryProvider>
       </body>
     </html>

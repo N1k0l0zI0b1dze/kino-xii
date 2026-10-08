@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import { getMovieSessions } from "../api/getMovieSessions";
 import type { MovieSession } from "../types";
 import SeatSelectionModal from "@/features/booking/components/SeatSelectionModal";
+import { useAuthModal } from "@/features/auth/context/AuthModalProvider";
+import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 
 type MovieSessionsProps = {
   movieSlug: string;
@@ -29,6 +33,45 @@ const MovieSessions = ({
     queryFn: () => getMovieSessions(movieSlug, selectedDate),
     enabled: !!selectedDate,
   });
+
+  const { openLogin } = useAuthModal();
+
+  const { data: currentUserData } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: getCurrentUser,
+    retry: false,
+  });
+
+  const currentUser = currentUserData?.data;
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const openBooking = (session: MovieSession) => {
+    if (!currentUser) {
+      openLogin(async () => {
+        const refreshedUser = await queryClient.fetchQuery({
+          queryKey: ["current-user"],
+          queryFn: getCurrentUser,
+        });
+
+        if (!refreshedUser?.data.profileComplete) {
+          router.push("/profile");
+          return;
+        }
+
+        setSelectedSession(session);
+      });
+
+      return;
+    }
+
+    if (!currentUser.profileComplete) {
+      router.push("/profile");
+      return;
+    }
+
+    setSelectedSession(session);
+  };
 
   const formatDate = (date: string) => {
     const value = new Date(`${date}T00:00:00Z`);
@@ -149,7 +192,7 @@ const MovieSessions = ({
                           <button
                             key={session.id}
                             type="button"
-                            onClick={() => setSelectedSession(session)}
+                            onClick={() => openBooking(session)}
                             disabled={session.isSoldOut}
                             className="flex w-fit cursor-pointer gap-2 bg-transparent text-left disabled:cursor-not-allowed disabled:opacity-40"
                           >
