@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 
 import { getComingSoonMovies } from "../api/getComingSoonMovies";
+import Link from "next/link";
 
 const ComingSoon = () => {
   const { data, isLoading, error } = useQuery({
@@ -22,13 +23,16 @@ const ComingSoon = () => {
   const movies = data.data;
 
   return (
-    <section className="mt-8 flex w-full flex-col px-17.5">
+    <section className="mt-8 flex w-full flex-col px-17.5 pb-20">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">COMING SOON...</h2>
 
-        <button type="button" className="text-sm font-medium text-[#EC3013]">
+        <Link
+          href="/sessions"
+          className="text-sm font-medium text-[#EC3013] cursor-pointer"
+        >
           See all
-        </button>
+        </Link>
       </div>
 
       <ul className="scrollbar-none mt-5 flex gap-5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
@@ -66,7 +70,7 @@ const ComingSoon = () => {
               ) : (
                 <button
                   type="button"
-                  className="mt-auto flex h-8 w-fit items-center gap-2 rounded-full border border-[#A9A9A9] px-4 text-[12px] font-medium text-white hover:bg-white/5"
+                  className="mt-auto flex h-8 w-fit items-center gap-2 rounded-full border border-[#A9A9A9] px-4 text-[12px] font-medium text-white hover:bg-white/5 cursor-pointer"
                 >
                   <Image
                     src="/assets/images/hero/notify.svg"

@@ -29,12 +29,12 @@ const NowPlaying = () => {
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">NOW PLAYING</h2>
 
-        <button
-          type="button"
-          className="cursor-pointer text-sm font-medium text-[#EC3013]"
+        <Link
+          href="/sessions"
+          className="text-sm font-medium text-[#EC3013] cursor-pointer"
         >
           See all
-        </button>
+        </Link>
       </div>
 
       <div className="flex gap-3 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
@@ -77,7 +77,7 @@ const NowPlaying = () => {
                 {movie.synopsis}
               </p>
 
-              <div className="mt-2.5 flex items-center justify-between">
+              <div className=" flex items-center justify-between">
                 <p className="text-[12px] font-medium text-white">
                   From ₾ {movie.fromPrice}
                 </p>

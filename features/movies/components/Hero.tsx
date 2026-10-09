@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 
 import { getFeaturedMovies } from "../api/getFeaturedMovies";
+import Link from "next/link";
 
 const Hero = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -115,8 +116,8 @@ const Hero = () => {
           <p className="text-sm font-medium text-white">{movie.synopsis}</p>
 
           <div className="mt-1.25 flex gap-2.5">
-            <button
-              type="button"
+            <Link
+              href={`/movies/${movie.slug}`}
               className="flex h-10.5 w-35.75 cursor-pointer items-center justify-center gap-1 rounded-full bg-[#EC3013] text-[14px] font-semibold text-white"
             >
               <Image
@@ -126,14 +127,14 @@ const Hero = () => {
                 height={16}
               />
               Buy tickets
-            </button>
+            </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/sessions"
               className="flex h-10.5 w-35.75 cursor-pointer items-center justify-center rounded-full bg-white/10 text-[14px] font-semibold text-white hover:bg-white/20"
             >
               All sessions
-            </button>
+            </Link>
           </div>
         </div>
       ))}
