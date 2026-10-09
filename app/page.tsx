@@ -1,3 +1,4 @@
+import ComingSoon from "@/features/movies/components/ComingSoon";
 import Hero from "@/features/movies/components/Hero";
 import NowPlaying from "@/features/movies/components/NowPlaying";
 import RecentlyViewed from "@/features/movies/components/RecentlyViewed";
@@ -9,6 +10,7 @@ export default function Page() {
         <Hero />
         <RecentlyViewed />
         <NowPlaying />
+        <ComingSoon />
       </div>
     </main>
   );
