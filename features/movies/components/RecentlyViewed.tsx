@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -25,29 +26,34 @@ const RecentlyViewed = () => {
         {movies.map((movie) => (
           <li
             key={movie.id}
-            className="flex h-21.75 w-[329.12px] shrink-0 flex-row gap-3 rounded-2xl bg-[#1E2031] p-2.5"
+            className="h-21.75 w-[329.12px] shrink-0 overflow-hidden rounded-2xl bg-[#1E2031] p-2.5"
           >
-            <Image
-              src={movie.posterUrl}
-              alt={movie.title}
-              width={87}
-              height={67}
-              className="rounded-lg object-cover"
-            />
+            <Link
+              href={`/movies/${movie.slug}`}
+              className="flex h-full w-full flex-row gap-3"
+            >
+              <Image
+                src={movie.posterUrl}
+                alt={movie.title}
+                width={87}
+                height={67}
+                className="rounded-lg object-cover"
+              />
 
-            <div className="flex flex-col">
-              <p className="text-sm font-bold text-white">{movie.title}</p>
+              <div className="flex flex-col">
+                <p className="text-sm font-bold text-white">{movie.title}</p>
 
-              <p className="text-[12px] font-medium text-[#A9A9A9]">
-                {movie.genres[0]?.name} · {movie.runtimeMinutes} min
-              </p>
-
-              <div className="mt-1 flex h-5.25 w-9.5 items-center justify-center rounded-full bg-[#EC3013]/10">
-                <p className="text-[12px] font-medium text-[#EC3013]">
-                  {movie.ageRating.code}
+                <p className="text-[12px] font-medium text-[#A9A9A9]">
+                  {movie.genres[0]?.name} · {movie.runtimeMinutes} min
                 </p>
+
+                <div className="mt-1 flex h-5.25 w-9.5 items-center justify-center rounded-full bg-[#EC3013]/10">
+                  <p className="text-[12px] font-medium text-[#EC3013]">
+                    {movie.ageRating.code}
+                  </p>
+                </div>
               </div>
-            </div>
+            </Link>
           </li>
         ))}
       </ul>
