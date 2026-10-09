@@ -1,12 +1,23 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { getComingSoonMovies } from "../api/getComingSoonMovies";
-import Link from "next/link";
 
 const ComingSoon = () => {
+  const [toastMessage, setToastMessage] = useState("");
+
+  const handleNotify = () => {
+    setToastMessage("You will be notified");
+
+    window.setTimeout(() => {
+      setToastMessage("");
+    }, 3000);
+  };
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["coming-soon-movies"],
     queryFn: getComingSoonMovies,
@@ -29,7 +40,7 @@ const ComingSoon = () => {
 
         <Link
           href="/sessions"
-          className="text-sm font-medium text-[#EC3013] cursor-pointer"
+          className="cursor-pointer text-sm font-medium text-[#EC3013]"
         >
           See all
         </Link>
@@ -63,28 +74,29 @@ const ComingSoon = () => {
                 </span>
               </div>
 
-              {movie.isNotified ? (
-                <p className="mt-auto text-[12px] font-medium text-white">
-                  You will be notified
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  className="mt-auto flex h-8 w-fit items-center gap-2 rounded-full border border-[#A9A9A9] px-4 text-[12px] font-medium text-white hover:bg-white/5 cursor-pointer"
-                >
-                  <Image
-                    src="/assets/images/hero/notify.svg"
-                    alt=""
-                    width={16}
-                    height={16}
-                  />
-                  Notify Me
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleNotify}
+                className="mt-auto flex h-8 w-fit cursor-pointer items-center gap-2 rounded-full border border-[#A9A9A9] px-4 text-[12px] font-medium text-white hover:bg-white/5"
+              >
+                <Image
+                  src="/assets/images/hero/notify.svg"
+                  alt=""
+                  width={16}
+                  height={16}
+                />
+                Notify Me
+              </button>
             </div>
           </li>
         ))}
       </ul>
+
+      {toastMessage && (
+        <div className="fixed right-6 bottom-6 z-50 rounded-xl bg-[#1E2031] px-5 py-3 text-sm font-medium text-green-400 shadow-lg border border-green-400">
+          {toastMessage}
+        </div>
+      )}
     </section>
   );
 };
