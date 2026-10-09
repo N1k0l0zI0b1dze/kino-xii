@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { getMovieDetails } from "../api/getMovieDetails";
+import { addRecentlyViewedMovie } from "../utils/recentlyViewed";
 import MovieDetailsHero from "./MovieDetailsHero";
 import MovieSessions from "./MovieSessions";
 import MovieDetailsInfo from "./MovieDetailsInfo";
@@ -17,21 +19,27 @@ const MovieDetails = ({ movieSlug }: MovieDetailsProps) => {
     queryFn: () => getMovieDetails(movieSlug),
   });
 
+  const movie = data?.data;
+
+  useEffect(() => {
+    if (!movie) return;
+
+    addRecentlyViewedMovie(movie);
+  }, [movie]);
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-[#070C1C] text-white">Loading...</main>
     );
   }
 
-  if (error || !data) {
+  if (error || !movie) {
     return (
       <main className="min-h-screen bg-[#070C1C] text-white">
         Movie not found.
       </main>
     );
   }
-
-  const movie = data.data;
 
   return (
     <main className="min-h-screen bg-[#070C1C] text-white">
