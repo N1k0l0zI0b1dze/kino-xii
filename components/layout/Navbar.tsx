@@ -18,14 +18,18 @@ const Navbar = () => {
 
   const user = data?.data;
   const pathname = usePathname();
+
   const isHomePage = pathname === "/";
+  const isMovieDetailsPage = pathname.startsWith("/movies/");
 
   return (
     <header
       className={
         isHomePage
           ? "absolute top-0 left-0 z-50 w-full bg-transparent"
-          : "relative z-50 w-full bg-[linear-gradient(180deg,#000000_0%,#03060E_80%,#070C1C_100%)]"
+          : isMovieDetailsPage
+            ? "relative z-50 w-full bg-transparent"
+            : "relative z-50 w-full bg-[linear-gradient(180deg,#000000_0%,#03060E_80%,#070C1C_100%)]"
       }
     >
       <nav className="relative z-50 flex h-27.75 items-center gap-4 px-15">
