@@ -1,4 +1,4 @@
-export const mockMoviesWithSessions = [
+const baseMoviesWithSessions = [
   {
     id: 1,
     title: "The Odyssey",
@@ -223,3 +223,17 @@ export const mockMoviesWithSessions = [
     ],
   },
 ];
+
+export const mockMoviesWithSessions = Array.from({ length: 10 }).flatMap(
+  (_, groupIndex) =>
+    baseMoviesWithSessions.map((movie) => ({
+      ...movie,
+      id: movie.id + groupIndex * baseMoviesWithSessions.length,
+      title:
+        groupIndex === 0 ? movie.title : `${movie.title} ${groupIndex + 1}`,
+      sessions: movie.sessions.map((session) => ({
+        ...session,
+        id: session.id + groupIndex * 100,
+      })),
+    })),
+);
