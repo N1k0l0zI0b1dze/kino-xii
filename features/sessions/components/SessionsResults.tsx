@@ -20,7 +20,7 @@ const SessionsResults = () => {
           </select>
         </div>
       </div>
-      <div className="flex flex-col mt-6">
+      <div className="flex flex-col border-b border-[#2A2C3D] pb-8 mt-6">
         <div className="flex flex-col gap-3.5">
           {/* poster and a movie */}
           <div className="flex flex-row gap-4">
