@@ -1,59 +1,98 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { mockMoviesWithSessions } from "../data/mockMoviesWithSessions";
+import { getSessions } from "../api/getSessions";
 import { mockSorts } from "../data/mockSorts";
 
-const ITEMS_PER_PAGE = 4;
+type PaginationItem = number | "...";
+
+const getPaginationItems = (
+  currentPage: number,
+  totalPages: number,
+): PaginationItem[] => {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, "...", totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [currentPage - 2, currentPage - 1, currentPage, "...", totalPages];
+};
 
 const SessionsResults = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const totalPages = Math.ceil(mockMoviesWithSessions.length / ITEMS_PER_PAGE);
+  const currentPage = Number(searchParams.get("page") ?? "1");
+  const sort = searchParams.get("sort") ?? "time_asc";
+  const queryString = searchParams.toString();
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["sessions", queryString],
+    queryFn: () => getSessions(queryString),
+  });
 
-  const currentMovies = mockMoviesWithSessions.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE,
-  );
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-  type PaginationItem = number | "...";
+    params.set("page", String(page));
 
-  const getPaginationItems = (
-    currentPage: number,
-    totalPages: number,
-  ): PaginationItem[] => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
-    if (currentPage <= 3) {
-      return [1, 2, 3, "...", totalPages];
-    }
-
-    if (currentPage >= totalPages - 2) {
-      return [1, "...", totalPages - 2, totalPages - 1, totalPages];
-    }
-
-    return [currentPage - 2, currentPage - 1, currentPage, "...", totalPages];
+    router.push(`${pathname}?${params.toString()}`);
   };
+
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.set("sort", value);
+    params.set("page", "1");
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (error || !data) {
+    return null;
+  }
+
+  const sessionGroups = data.data;
+  const totalPages = data.meta.lastPage;
   const paginationItems = getPaginationItems(currentPage, totalPages);
 
   return (
     <div className="flex flex-col pb-24">
       <div className="flex flex-row items-center justify-between">
-        <p className="text-sm font-medium text-white">Showing 12 sessions</p>
+        <p className="text-sm font-medium text-white">
+          Showing {data.meta.totalSessions} sessions
+        </p>
 
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-[#A9A9A9]">Sort:</span>
 
-          <select className="bg-transparent text-[12px] font-medium text-white outline-none">
-            {mockSorts.map((sort) => (
-              <option key={sort.id} value={sort.id} className="text-black">
-                {sort.label}
+          <select
+            value={sort}
+            onChange={(e) => handleSortChange(e.target.value)}
+            className="bg-transparent text-[12px] font-medium text-white outline-none"
+          >
+            {mockSorts.map((sortOption) => (
+              <option
+                key={sortOption.id}
+                value={sortOption.id}
+                className="text-black"
+              >
+                {sortOption.label}
               </option>
             ))}
           </select>
@@ -61,7 +100,7 @@ const SessionsResults = () => {
       </div>
 
       <div className="mt-6 flex flex-col">
-        {currentMovies.map((movie) => (
+        {sessionGroups.map(({ movie, sessions }) => (
           <div
             key={movie.id}
             className="flex flex-col border-b border-[#2A2C3D] py-8 first:pt-0 last:border-b-0 last:pb-0"
@@ -83,7 +122,7 @@ const SessionsResults = () => {
 
                     <div className="mt-1 flex h-5.25 w-9.5 items-center justify-center rounded-full bg-[#EC3013]/10">
                       <p className="text-[12px] font-medium text-[#EC3013]">
-                        {movie.ageRating}
+                        {movie.ageRating.code}
                       </p>
                     </div>
                   </div>
@@ -96,7 +135,7 @@ const SessionsResults = () => {
 
               <div className="scrollbar-none mt-3.5 flex flex-row overflow-x-auto [&::-webkit-scrollbar]:hidden">
                 <ul className="flex shrink-0 flex-row gap-3">
-                  {movie.sessions.map((session) => (
+                  {sessions.map((session) => (
                     <li
                       key={session.id}
                       className={`flex h-26 w-63 shrink-0 flex-col rounded-2xl bg-[#1E2031] px-3.75 py-3.75 ${
@@ -112,14 +151,14 @@ const SessionsResults = () => {
 
                         <div className="flex h-5.75 w-auto items-center justify-center rounded-full bg-[#2A2C3D] px-2.5">
                           <p className="text-[12px] font-medium text-white">
-                            {session.format}
+                            {session.format.name}
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-3 flex flex-row justify-between">
                         <p className="text-[12px] font-medium text-[#A9A9A9]">
-                          {session.language}
+                          {session.language.name}
                         </p>
 
                         <div className="flex flex-row gap-0.5">
@@ -148,7 +187,7 @@ const SessionsResults = () => {
 
                       <div className="mt-1.5 flex flex-row items-center justify-between">
                         <p className="text-[12px] font-medium text-white">
-                          {session.venue} · {session.hall}
+                          {session.venue.name} · {session.hall.name}
                         </p>
 
                         <p className="text-sm font-bold text-white">
@@ -168,9 +207,9 @@ const SessionsResults = () => {
         <div className="mt-13 flex items-center justify-center gap-2.5">
           <button
             type="button"
-            onClick={() => setCurrentPage((prev) => prev - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#1E2031] text-sm text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-white/20"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#1E2031] text-sm text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ‹
           </button>
@@ -180,7 +219,7 @@ const SessionsResults = () => {
               return (
                 <span
                   key={`ellipsis-${index}`}
-                  className="flex h-10 w-10 rounded-full cursor-pointer items-center justify-center text-sm text-white hover:bg-white/20"
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-sm text-white"
                 >
                   ...
                 </span>
@@ -191,7 +230,7 @@ const SessionsResults = () => {
               <button
                 key={item}
                 type="button"
-                onClick={() => setCurrentPage(item)}
+                onClick={() => handlePageChange(item)}
                 className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-sm text-white ${
                   currentPage === item
                     ? "bg-[#EC3013] font-medium"
@@ -205,9 +244,9 @@ const SessionsResults = () => {
 
           <button
             type="button"
-            onClick={() => setCurrentPage((prev) => prev + 1)}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#1E2031] text-sm text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-white/20"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#1E2031] text-sm text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ›
           </button>
