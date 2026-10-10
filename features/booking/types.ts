@@ -52,9 +52,53 @@ export type TicketTypeOption = {
   blockedFromRatingAge: number | null;
 };
 
+export type FilterFormat = {
+  id: number;
+  slug: string;
+  name: string;
+  priceUplift: number;
+};
+
+export type FilterVenue = {
+  id: number;
+  slug: string;
+  name: string;
+  city: string;
+  formats: FilterFormat[];
+};
+
+export type FilterLanguage = {
+  id: number;
+  slug: string;
+  name: string;
+  code: string;
+};
+
+export type FilterTimeBand = {
+  id: string;
+  label: string;
+};
+
+export type FilterSort = {
+  id: string;
+  label: string;
+};
+
+export type FilterAgeRating = {
+  code: string;
+  minAge: number;
+  description: string;
+};
+
 export type FilterOptionsResponse = {
   data: {
+    venues: FilterVenue[];
+    formats: FilterFormat[];
+    languages: FilterLanguage[];
+    timeBands: FilterTimeBand[];
+    sorts: FilterSort[];
     ticketTypes: TicketTypeOption[];
+    ageRatings: FilterAgeRating[];
     maxSeatsPerOrder: number;
     holdMinutes: number;
   };

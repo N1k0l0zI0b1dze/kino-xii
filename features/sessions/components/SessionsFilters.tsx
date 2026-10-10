@@ -1,35 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { mockFilters } from "../data/mockFilters";
 import Image from "next/image";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+import { getFilterOptions } from "@/features/booking/api/getFilterOptions";
+import { getNextSevenDays } from "../utils/getNextSevenDays";
 
 const SessionsFilters = () => {
   const [selectedVenues, setSelectedVenues] = useState<number[]>([]);
-  const [selectedDates, setSelectedDates] = useState<number[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedFormats, setSelectedFormats] = useState<number[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<number[]>([]);
-  const [selectedTimes, setSelectedTimes] = useState<number[]>([]);
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: getFilterOptions,
+  });
+
   const activeFiltersCount =
     selectedVenues.length +
+    (selectedDate ? 1 : 0) +
     selectedFormats.length +
     selectedLanguages.length +
     selectedTimes.length;
 
-  const handleFilter = (venueId: number) => {
-    setSelectedVenues((prev) =>
-      prev.includes(venueId)
-        ? prev.filter((id) => id !== venueId)
-        : [...prev, venueId],
-    );
-  };
-
-  const handleDate = (dateId: number) => {
-    setSelectedDates((prev) =>
-      prev.includes(dateId)
-        ? prev.filter((id) => id !== dateId)
-        : [...prev, dateId],
-    );
+  const handleDate = (dateId: string) => {
+    setSelectedDate((prev) => (prev === dateId ? null : dateId));
   };
 
   const handleFormat = (formatId: number) => {
@@ -48,7 +46,7 @@ const SessionsFilters = () => {
     );
   };
 
-  const handleTimeOfDay = (timeId: number) => {
+  const handleTimeOfDay = (timeId: string) => {
     setSelectedTimes((prev) =>
       prev.includes(timeId)
         ? prev.filter((id) => id !== timeId)
@@ -58,10 +56,53 @@ const SessionsFilters = () => {
 
   const handleClearFilters = () => {
     setSelectedVenues([]);
+    setSelectedDate(null);
     setSelectedFormats([]);
     setSelectedLanguages([]);
     setSelectedTimes([]);
   };
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (error || !data) {
+    return null;
+  }
+
+  const { venues, formats, languages, timeBands } = data.data;
+
+  const handleFilter = (venueId: number) => {
+    const nextVenues = selectedVenues.includes(venueId)
+      ? selectedVenues.filter((id) => id !== venueId)
+      : [...selectedVenues, venueId];
+
+    setSelectedVenues(nextVenues);
+
+    if (nextVenues.length === 0) return;
+
+    const availableFormatIds = new Set(
+      venues
+        .filter((venue) => nextVenues.includes(venue.id))
+        .flatMap((venue) => venue.formats.map((format) => format.id)),
+    );
+
+    setSelectedFormats((prev) =>
+      prev.filter((formatId) => availableFormatIds.has(formatId)),
+    );
+  };
+  const availableFormats =
+    selectedVenues.length === 0
+      ? formats
+      : formats.filter((format) =>
+          venues.some(
+            (venue) =>
+              selectedVenues.includes(venue.id) &&
+              venue.formats.some((venueFormat) => venueFormat.id === format.id),
+          ),
+        );
+
+  const dates = getNextSevenDays();
 
   return (
     <div className="w-[320px] h-auto rounded-2xl bg-[#1E2031] px-6 py-6">
@@ -70,8 +111,9 @@ const SessionsFilters = () => {
 
         <div className="flex flex-col gap-3 pb-6 border-b border-b-[#2A2C3D] mt-6">
           <p className="text-[12px] font-medium text-[#A9A9A9]">VENUE</p>
+
           <ul className="flex flex-col gap-3">
-            {mockFilters.venues.map((venue) => (
+            {venues.map((venue) => (
               <li key={venue.id} className="flex flex-row gap-2.5 items-center">
                 <div
                   onClick={() => handleFilter(venue.id)}
@@ -88,6 +130,7 @@ const SessionsFilters = () => {
                     />
                   )}
                 </div>
+
                 <p className="text-sm font-medium text-white">
                   {venue.name} ·{" "}
                   <span className="text-[12px] font-medium text-[#A9A9A9]">
@@ -101,12 +144,15 @@ const SessionsFilters = () => {
 
         <div className="flex flex-col gap-3 pb-6 border-b border-b-[#2A2C3D] mt-6">
           <p className="text-[12px] font-medium text-[#A9A9A9]">DATE</p>
+
           <ul className="flex flex-row gap-1.5 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
-            {mockFilters.dates.map((date) => (
+            {dates.map((date) => (
               <li
                 key={date.id}
                 onClick={() => handleDate(date.id)}
-                className={`w-9.25 h-13.5 shrink-0 rounded-lg flex flex-col items-center justify-center cursor-pointer bg-[#2A2C3D] ${selectedDates.includes(date.id) && "bg-[#EC3013]"}`}
+                className={`w-9.25 h-13.5 shrink-0 rounded-lg flex flex-col items-center justify-center cursor-pointer bg-[#2A2C3D] ${
+                  selectedDate === date.id && "bg-[#EC3013]"
+                }`}
               >
                 <p className="text-[12px] font-medium text-white">{date.day}</p>
                 <p className="text-[12px] font-medium text-white">
@@ -121,7 +167,7 @@ const SessionsFilters = () => {
           <p className="text-[12px] font-medium text-[#A9A9A9]">FORMAT</p>
 
           <ul className="flex flex-col gap-3">
-            {mockFilters.formats.map((format) => (
+            {availableFormats.map((format) => (
               <li
                 key={format.id}
                 className="flex flex-row gap-2.5 items-center"
@@ -152,7 +198,7 @@ const SessionsFilters = () => {
           <p className="text-[12px] font-medium text-[#A9A9A9]">LANGUAGE</p>
 
           <ul className="flex flex-col gap-3">
-            {mockFilters.languages.map((language) => (
+            {languages.map((language) => (
               <li
                 key={language.id}
                 className="flex flex-row gap-2.5 items-center"
@@ -185,7 +231,7 @@ const SessionsFilters = () => {
           <p className="text-[12px] font-medium text-[#A9A9A9]">TIME OF DAY</p>
 
           <ul className="flex flex-col gap-3">
-            {mockFilters.timeOfDay.map((time) => (
+            {timeBands.map((time) => (
               <li key={time.id} className="flex flex-row items-center gap-2.5">
                 <div
                   onClick={() => handleTimeOfDay(time.id)}
@@ -203,12 +249,7 @@ const SessionsFilters = () => {
                   )}
                 </div>
 
-                <p className="text-sm font-medium text-white">
-                  {time.name} ·{" "}
-                  <span className="text-[12px] font-medium text-[#A9A9A9]">
-                    {time.label}
-                  </span>
-                </p>
+                <p className="text-sm font-medium text-white">{time.label}</p>
               </li>
             ))}
           </ul>
