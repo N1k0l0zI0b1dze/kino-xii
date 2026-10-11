@@ -17,6 +17,20 @@ export type AgeRating = {
   description: string;
 };
 
+export type MovieVenue = {
+  id: number;
+  slug: string;
+  name: string;
+  city: string;
+};
+
+export type MovieLanguage = {
+  id: number;
+  slug: string;
+  name: string;
+  code: string;
+};
+
 export type Movie = {
   id: number;
   slug: string;
@@ -55,7 +69,6 @@ export type MovieDetailsResponse = {
 };
 
 export type MovieSession = {
-  venue: any;
   id: number;
   startsAt: string;
   date: string;
@@ -68,22 +81,13 @@ export type MovieSession = {
     id: number;
     name: string;
   };
+  venue: MovieVenue;
   format: MovieFormat;
-  language: {
-    id: number;
-    slug: string;
-    name: string;
-    code: string;
-  };
+  language: MovieLanguage;
 };
 
 export type MovieSessionsVenue = {
-  venue: {
-    id: number;
-    slug: string;
-    name: string;
-    city: string;
-  };
+  venue: MovieVenue;
   sessions: MovieSession[];
 };
 
@@ -118,12 +122,7 @@ export type SeatMapResponse = {
     hall: {
       id: number;
       name: string;
-      venue: {
-        id: number;
-        slug: string;
-        name: string;
-        city: string;
-      };
+      venue: MovieVenue;
     };
     sections: SeatSection[];
   };

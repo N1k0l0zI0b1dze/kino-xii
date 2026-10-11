@@ -1,13 +1,18 @@
 "use client";
 
+import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import { useRouter, useSearchParams } from "next/navigation";
+
+import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import PersonalInformation from "@/features/profile/components/PersonalInformation";
 import MyTickets from "@/features/profile/components/MyTickets";
 import { getTickets } from "@/features/profile/api/getTickets";
 
-const ProfilePage = () => {
+const ProfileContent = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { data, isLoading } = useQuery({
     queryKey: ["current-user"],
     queryFn: getCurrentUser,
@@ -24,8 +29,6 @@ const ProfilePage = () => {
   });
 
   const ticketCount = ticketsData?.data.length ?? 0;
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const activeTab =
     searchParams.get("tab") === "tickets" ? "tickets" : "personal";
@@ -45,12 +48,13 @@ const ProfilePage = () => {
   }
 
   return (
-    <main className="min-h-screen bg-[#070C1C] text-white px-12.75">
-      <div className="flex flex-col h-22 items-start mt-[6.5px] gap-7">
+    <main className="min-h-screen bg-[#070C1C] px-12.75 text-white">
+      <div className="mt-[6.5px] flex h-22 flex-col items-start gap-7">
         <h1 className="text-[24px] font-semibold text-white">My Profile</h1>
 
         <div className="flex flex-row gap-8">
           <button
+            type="button"
             onClick={() => router.replace("/profile", { scroll: false })}
             className={`pb-3.5 text-[14px] font-medium ${
               activeTab === "personal" ? "border-b-2 border-b-[#EC3013]" : ""
@@ -60,6 +64,7 @@ const ProfilePage = () => {
           </button>
 
           <button
+            type="button"
             onClick={() =>
               router.replace("/profile?tab=tickets", { scroll: false })
             }
@@ -83,6 +88,18 @@ const ProfilePage = () => {
         )}
       </div>
     </main>
+  );
+};
+
+const ProfilePage = () => {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#070707] text-white">Loading...</main>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
   );
 };
 

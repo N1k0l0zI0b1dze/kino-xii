@@ -32,6 +32,19 @@ type SeatSelectionModalProps = {
 
 type BookingStep = "seats" | "checkout";
 
+const formatMobileNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 9);
+
+  return [
+    digits.slice(0, 3),
+    digits.slice(3, 5),
+    digits.slice(5, 7),
+    digits.slice(7, 9),
+  ]
+    .filter(Boolean)
+    .join(" ");
+};
+
 const SeatSelectionModal = ({
   session,
   ageRatingMinAge,
@@ -349,6 +362,7 @@ const SeatSelectionModal = ({
     })),
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!data) return;
 
@@ -374,6 +388,7 @@ const SeatSelectionModal = ({
       });
     }
   }, [data]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSeatClick = (seat: SessionSeat) => {
     const isSelected = selectedSeats.some(
@@ -449,19 +464,6 @@ const SeatSelectionModal = ({
 
     return total + session.price * priceRatio;
   }, 0);
-
-  const formatMobileNumber = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 9);
-
-    return [
-      digits.slice(0, 3),
-      digits.slice(3, 5),
-      digits.slice(5, 7),
-      digits.slice(7, 9),
-    ]
-      .filter(Boolean)
-      .join(" ");
-  };
 
   const handleMobileNumberInput = (
     event: React.FormEvent<HTMLInputElement>,

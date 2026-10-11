@@ -12,9 +12,11 @@ import {
 const RecentlyViewed = () => {
   const [movies, setMovies] = useState<RecentlyViewedMovie[]>([]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setMovies(getRecentlyViewedMovies());
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (movies.length === 0) return null;
 

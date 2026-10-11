@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import SessionsFilters from "@/features/sessions/components/SessionsFilters";
 import SessionsResults from "@/features/sessions/components/SessionsResults";
 
@@ -11,15 +13,17 @@ const SessionsPage = () => {
           Browse showtimes across all venues
         </p>
 
-        <div className="flex flex-row items-start gap-12 mt-9">
-          <div className="mt-[6.5px] shrink-0">
-            <SessionsFilters />
-          </div>
+        <Suspense fallback={null}>
+          <div className="mt-9 flex flex-row items-start gap-12">
+            <div className="mt-[6.5px] shrink-0">
+              <SessionsFilters />
+            </div>
 
-          <div className="min-w-0 flex-1 mt-?">
-            <SessionsResults />
+            <div className="min-w-0 flex-1 mt-0">
+              <SessionsResults />
+            </div>
           </div>
-        </div>
+        </Suspense>
       </section>
     </main>
   );
