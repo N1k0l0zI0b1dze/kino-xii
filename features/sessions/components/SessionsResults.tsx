@@ -6,6 +6,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { getSessions } from "../api/getSessions";
 import { mockSorts } from "../data/mockSorts";
+import { useState } from "react";
+
+import SeatSelectionModal from "@/features/booking/components/SeatSelectionModal";
+import type { Session } from "../types";
 
 type PaginationItem = number | "...";
 
@@ -29,6 +33,10 @@ const getPaginationItems = (
 };
 
 const SessionsResults = () => {
+  const [selectedBooking, setSelectedBooking] = useState<{
+    session: Session;
+    ageRatingMinAge: number;
+  } | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -112,6 +120,7 @@ const SessionsResults = () => {
                   alt={movie.title}
                   width={56}
                   height={80}
+                  className="rounded-lg object-cover"
                 />
 
                 <div className="flex flex-col">
@@ -136,64 +145,73 @@ const SessionsResults = () => {
               <div className="scrollbar-none mt-3.5 flex flex-row overflow-x-auto [&::-webkit-scrollbar]:hidden">
                 <ul className="flex shrink-0 flex-row gap-3">
                   {sessions.map((session) => (
-                    <li
-                      key={session.id}
-                      className={`flex h-26 w-63 shrink-0 flex-col rounded-2xl bg-[#1E2031] px-3.75 py-3.75 ${
-                        session.isSoldOut
-                          ? "cursor-not-allowed opacity-40"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <div className="flex flex-row justify-between">
-                        <h3 className="text-[18px] font-bold text-white">
-                          {session.time}
-                        </h3>
+                    <li key={session.id} className="shrink-0">
+                      <button
+                        type="button"
+                        disabled={session.isSoldOut}
+                        onClick={() =>
+                          setSelectedBooking({
+                            session,
+                            ageRatingMinAge: movie.ageRating.minAge,
+                          })
+                        }
+                        className={`flex h-26 w-63 flex-col rounded-2xl bg-[#1E2031] px-3.75 py-3.75 text-left ${
+                          session.isSoldOut
+                            ? "cursor-not-allowed opacity-40"
+                            : "cursor-pointer"
+                        }`}
+                      >
+                        <div className="flex w-full flex-row justify-between">
+                          <h3 className="text-[18px] font-bold text-white">
+                            {session.time}
+                          </h3>
 
-                        <div className="flex h-5.75 w-auto items-center justify-center rounded-full bg-[#2A2C3D] px-2.5">
+                          <div className="flex h-5.75 w-auto items-center justify-center rounded-full bg-[#2A2C3D] px-2.5">
+                            <p className="text-[12px] font-medium text-white">
+                              {session.format.name}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex w-full flex-row justify-between">
+                          <p className="text-[12px] font-medium text-[#A9A9A9]">
+                            {session.language.name}
+                          </p>
+
+                          <div className="flex flex-row gap-0.5">
+                            <Image
+                              src={
+                                session.seatsLeft <= 5
+                                  ? "/assets/images/sessions/ticketsRed.svg"
+                                  : "/assets/images/sessions/ticketsGreen.svg"
+                              }
+                              alt="Seats left"
+                              width={12}
+                              height={12}
+                            />
+
+                            <p
+                              className={`text-[12px] font-medium ${
+                                session.seatsLeft <= 5
+                                  ? "text-[#EC3013]"
+                                  : "text-[#4ADE80]"
+                              }`}
+                            >
+                              {session.seatsLeft} left
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-1.5 flex w-full flex-row items-center justify-between">
                           <p className="text-[12px] font-medium text-white">
-                            {session.format.name}
+                            {session.venue.name} · {session.hall.name}
+                          </p>
+
+                          <p className="text-sm font-bold text-white">
+                            ₾{session.price}
                           </p>
                         </div>
-                      </div>
-
-                      <div className="mt-3 flex flex-row justify-between">
-                        <p className="text-[12px] font-medium text-[#A9A9A9]">
-                          {session.language.name}
-                        </p>
-
-                        <div className="flex flex-row gap-0.5">
-                          <Image
-                            src={
-                              session.seatsLeft <= 5
-                                ? "/assets/images/sessions/ticketsRed.svg"
-                                : "/assets/images/sessions/ticketsGreen.svg"
-                            }
-                            alt=""
-                            width={12}
-                            height={12}
-                          />
-
-                          <p
-                            className={`text-[12px] font-medium ${
-                              session.seatsLeft <= 5
-                                ? "text-[#EC3013]"
-                                : "text-[#4ADE80]"
-                            }`}
-                          >
-                            {session.seatsLeft} left
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-1.5 flex flex-row items-center justify-between">
-                        <p className="text-[12px] font-medium text-white">
-                          {session.venue.name} · {session.hall.name}
-                        </p>
-
-                        <p className="text-sm font-bold text-white">
-                          ₾{session.price}
-                        </p>
-                      </div>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -251,6 +269,14 @@ const SessionsResults = () => {
             ›
           </button>
         </div>
+      )}
+
+      {selectedBooking && (
+        <SeatSelectionModal
+          session={selectedBooking.session}
+          ageRatingMinAge={selectedBooking.ageRatingMinAge}
+          onClose={() => setSelectedBooking(null)}
+        />
       )}
     </div>
   );
