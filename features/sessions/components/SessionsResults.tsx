@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { getSessions } from "../api/getSessions";
-import { mockSorts } from "../data/mockSorts";
-import { useState } from "react";
-
 import SeatSelectionModal from "@/features/booking/components/SeatSelectionModal";
+import { getFilterOptions } from "@/features/booking/api/getFilterOptions";
+
+import { getSessions } from "../api/getSessions";
 import type { Session } from "../types";
 
 type PaginationItem = number | "...";
@@ -37,6 +37,7 @@ const SessionsResults = () => {
     session: Session;
     ageRatingMinAge: number;
   } | null>(null);
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,6 +49,11 @@ const SessionsResults = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["sessions", queryString],
     queryFn: () => getSessions(queryString),
+  });
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: getFilterOptions,
   });
 
   const handlePageChange = (page: number) => {
@@ -68,16 +74,29 @@ const SessionsResults = () => {
   };
 
   if (isLoading) {
-    return null;
+    return (
+      <div className="flex min-h-60 items-center justify-center">
+        <p className="text-sm font-medium text-[#A9A9A9]">
+          Loading sessions...
+        </p>
+      </div>
+    );
   }
 
   if (error || !data) {
-    return null;
+    return (
+      <div className="flex min-h-60 items-center justify-center">
+        <p className="text-sm font-medium text-[#EC3013]">
+          Failed to load sessions
+        </p>
+      </div>
+    );
   }
 
   const sessionGroups = data.data;
   const totalPages = data.meta.lastPage;
   const paginationItems = getPaginationItems(currentPage, totalPages);
+  const sorts = filterOptions?.data.sorts ?? [];
 
   return (
     <div className="flex flex-col pb-24">
@@ -94,7 +113,7 @@ const SessionsResults = () => {
             onChange={(e) => handleSortChange(e.target.value)}
             className="bg-transparent text-[12px] font-medium text-white outline-none"
           >
-            {mockSorts.map((sortOption) => (
+            {sorts.map((sortOption) => (
               <option
                 key={sortOption.id}
                 value={sortOption.id}
@@ -108,117 +127,125 @@ const SessionsResults = () => {
       </div>
 
       <div className="mt-6 flex flex-col">
-        {sessionGroups.map(({ movie, sessions }) => (
-          <div
-            key={movie.id}
-            className="flex flex-col border-b border-[#2A2C3D] py-8 first:pt-0 last:border-b-0 last:pb-0"
-          >
-            <div className="flex flex-col gap-3.5">
-              <div className="flex flex-row gap-4">
-                <Image
-                  src={movie.posterUrl}
-                  alt={movie.title}
-                  width={56}
-                  height={80}
-                  className="rounded-lg object-cover"
-                />
+        {sessionGroups.length === 0 ? (
+          <div className="flex min-h-60 items-center justify-center">
+            <p className="text-sm font-medium text-[#A9A9A9]">
+              No sessions found
+            </p>
+          </div>
+        ) : (
+          sessionGroups.map(({ movie, sessions }) => (
+            <div
+              key={movie.id}
+              className="flex flex-col border-b border-[#2A2C3D] py-8 first:pt-0 last:border-b-0 last:pb-0"
+            >
+              <div className="flex flex-col gap-3.5">
+                <div className="flex flex-row gap-4">
+                  <Image
+                    src={movie.posterUrl}
+                    alt={movie.title}
+                    width={56}
+                    height={80}
+                    className="rounded-lg object-cover"
+                  />
 
-                <div className="flex flex-col">
-                  <div className="mt-3.5 flex flex-row gap-3">
-                    <h3 className="text-[18px] font-bold text-white">
-                      {movie.title}
-                    </h3>
+                  <div className="flex flex-col">
+                    <div className="mt-3.5 flex flex-row gap-3">
+                      <h3 className="text-[18px] font-bold text-white">
+                        {movie.title}
+                      </h3>
 
-                    <div className="mt-1 flex h-5.25 w-9.5 items-center justify-center rounded-full bg-[#EC3013]/10">
-                      <p className="text-[12px] font-medium text-[#EC3013]">
-                        {movie.ageRating.code}
-                      </p>
+                      <div className="mt-1 flex h-5.25 w-9.5 items-center justify-center rounded-full bg-[#EC3013]/10">
+                        <p className="text-[12px] font-medium text-[#EC3013]">
+                          {movie.ageRating.code}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <p className="text-sm font-medium text-[#A9A9A9]">
-                    {movie.runtimeMinutes} min
-                  </p>
+                    <p className="text-sm font-medium text-[#A9A9A9]">
+                      {movie.runtimeMinutes} min
+                    </p>
+                  </div>
+                </div>
+
+                <div className="scrollbar-none mt-3.5 flex flex-row overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                  <ul className="flex shrink-0 flex-row gap-3">
+                    {sessions.map((session) => (
+                      <li key={session.id} className="shrink-0">
+                        <button
+                          type="button"
+                          disabled={session.isSoldOut}
+                          onClick={() =>
+                            setSelectedBooking({
+                              session,
+                              ageRatingMinAge: movie.ageRating.minAge,
+                            })
+                          }
+                          className={`flex h-26 w-63 flex-col rounded-2xl bg-[#1E2031] px-3.75 py-3.75 text-left ${
+                            session.isSoldOut
+                              ? "cursor-not-allowed opacity-40"
+                              : "cursor-pointer"
+                          }`}
+                        >
+                          <div className="flex w-full flex-row justify-between">
+                            <h3 className="text-[18px] font-bold text-white">
+                              {session.time}
+                            </h3>
+
+                            <div className="flex h-5.75 w-auto items-center justify-center rounded-full bg-[#2A2C3D] px-2.5">
+                              <p className="text-[12px] font-medium text-white">
+                                {session.format.name}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex w-full flex-row justify-between">
+                            <p className="text-[12px] font-medium text-[#A9A9A9]">
+                              {session.language.name}
+                            </p>
+
+                            <div className="flex flex-row gap-0.5">
+                              <Image
+                                src={
+                                  session.seatsLeft <= 5
+                                    ? "/assets/images/sessions/ticketsRed.svg"
+                                    : "/assets/images/sessions/ticketsGreen.svg"
+                                }
+                                alt="Seats left"
+                                width={12}
+                                height={12}
+                              />
+
+                              <p
+                                className={`text-[12px] font-medium ${
+                                  session.seatsLeft <= 5
+                                    ? "text-[#EC3013]"
+                                    : "text-[#4ADE80]"
+                                }`}
+                              >
+                                {session.seatsLeft} left
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-1.5 flex w-full flex-row items-center justify-between">
+                            <p className="text-[12px] font-medium text-white">
+                              {session.venue.name} · {session.hall.name}
+                            </p>
+
+                            <p className="text-sm font-bold text-white">
+                              ₾{session.price}
+                            </p>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-
-              <div className="scrollbar-none mt-3.5 flex flex-row overflow-x-auto [&::-webkit-scrollbar]:hidden">
-                <ul className="flex shrink-0 flex-row gap-3">
-                  {sessions.map((session) => (
-                    <li key={session.id} className="shrink-0">
-                      <button
-                        type="button"
-                        disabled={session.isSoldOut}
-                        onClick={() =>
-                          setSelectedBooking({
-                            session,
-                            ageRatingMinAge: movie.ageRating.minAge,
-                          })
-                        }
-                        className={`flex h-26 w-63 flex-col rounded-2xl bg-[#1E2031] px-3.75 py-3.75 text-left ${
-                          session.isSoldOut
-                            ? "cursor-not-allowed opacity-40"
-                            : "cursor-pointer"
-                        }`}
-                      >
-                        <div className="flex w-full flex-row justify-between">
-                          <h3 className="text-[18px] font-bold text-white">
-                            {session.time}
-                          </h3>
-
-                          <div className="flex h-5.75 w-auto items-center justify-center rounded-full bg-[#2A2C3D] px-2.5">
-                            <p className="text-[12px] font-medium text-white">
-                              {session.format.name}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex w-full flex-row justify-between">
-                          <p className="text-[12px] font-medium text-[#A9A9A9]">
-                            {session.language.name}
-                          </p>
-
-                          <div className="flex flex-row gap-0.5">
-                            <Image
-                              src={
-                                session.seatsLeft <= 5
-                                  ? "/assets/images/sessions/ticketsRed.svg"
-                                  : "/assets/images/sessions/ticketsGreen.svg"
-                              }
-                              alt="Seats left"
-                              width={12}
-                              height={12}
-                            />
-
-                            <p
-                              className={`text-[12px] font-medium ${
-                                session.seatsLeft <= 5
-                                  ? "text-[#EC3013]"
-                                  : "text-[#4ADE80]"
-                              }`}
-                            >
-                              {session.seatsLeft} left
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-1.5 flex w-full flex-row items-center justify-between">
-                          <p className="text-[12px] font-medium text-white">
-                            {session.venue.name} · {session.hall.name}
-                          </p>
-
-                          <p className="text-sm font-bold text-white">
-                            ₾{session.price}
-                          </p>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {totalPages > 1 && (
