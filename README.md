@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KINO XII
+
+A cinema ticket booking platform built with Next.js,
+TypeScript, and modern web technologies.
+
+## Project Overview
+
+Kino XII is a web application designed to provide
+a seamless cinema ticket booking experience.
+
+Users can discover movies, explore available sessions,
+select seats, manage their accounts, and book tickets
+through a responsive and user-friendly interface.
+
+The project was developed independently as part of
+a technical assessment.
+
+## Tech Stack
+
+### Frontend
+
+- Next.js 16 (App Router)
+- React
+- TypeScript
+- Tailwind CSS v4
+
+### State Management & Data Fetching
+
+- TanStack Query v5
+
+### Forms & Validation
+
+- React Hook Form
+- Zod
+
+### Backend Integration
+
+- Next.js Route Handlers
+- REST API
+- HTTP-only Cookies
+- Server-side API Proxy
+
+### Development Tools
+
+- Git & GitHub
+- ESLint
+- Figma
+- Vercel
+
+## Key Features
+
+- Featured, now-playing, and upcoming movies
+- Movie details and cinema sessions
+- Debounced movie search
+- User authentication
+- HTTP-only cookie-based authentication
+- Protected actions with automatic retry after login
+- Seat selection and ticket booking
+- Checkout flow
+- User profile management
+- Age-based booking restrictions
+- Form validation
+- Responsive user interface
+
+## Architecture
+
+The application uses Next.js Route Handlers as
+a server-side proxy between the client application
+and the external REST API.
+
+```text
+Client (React / Next.js)
+          |
+          v
+Next.js Route Handlers
+          |
+          v
+External REST API
+```
+
+This architecture was implemented to handle
+cross-origin restrictions and manage authentication
+through server-side HTTP-only cookies.
+
+## Project Structure
+
+```text
+kino-xii/
+├── app/
+│   └── api/
+├── components/
+├── features/
+├── lib/
+│   └── api/
+├── public/
+└── package.json
+```
+
+The project separates application routes, reusable
+components, feature-specific logic, and API utilities.
 
 ## Getting Started
 
-First, run the development server:
+### Clone the repository
+
+```bash
+git clone https://github.com/N1k0l0zI0b1dze/kino-xii.git
+cd kino-xii
+```
+
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Current Project Status
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The original external backend API is no longer
+accessible.
 
-## Learn More
+As a result, features that depend on the external API
+are currently unavailable.
 
-To learn more about Next.js, take a look at the following resources:
+The existing frontend implementation is preserved,
+and an independent backend is planned to restore
+the application's functionality.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Backend Development Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [ ] Design backend architecture
+- [ ] Design relational database schema
+- [ ] Implement authentication and authorization
+- [ ] Integrate an external movie data provider
+- [ ] Implement movie and cinema session APIs
+- [ ] Implement seat availability and reservations
+- [ ] Implement ticket booking and order management
+- [ ] Connect the existing frontend to the new backend
+- [ ] Add automated tests
+- [ ] Deploy the complete full-stack application
 
-## Deploy on Vercel
+## Author
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Nikoloz Iobidze
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Junior Full-Stack Developer & Computer Science Student
+
+- [GitHub](https://github.com/N1k0l0zI0b1dze)
+- [LinkedIn](https://www.linkedin.com/in/nikoloz-iobidze-05719432b/)
